@@ -1,5 +1,7 @@
-pacman::p_load(shiny, sf, tmap, bslib, tidyverse, sfdep, shinydashboard, shinythemes)
-
+pacman::p_load(shiny, bslib, sf, tmap, tidyverse, sfdep, shinydashboard, shinythemes, 
+               tmap, tmaptools, ggplot2, gridExtra, ClustGeo, 
+               ggpubr, cluster, factoextra, NbClust,
+               heatmaply, corrplot, psych, GGally)
 
 # Load analytics module
 source("./eda/eda.R")
