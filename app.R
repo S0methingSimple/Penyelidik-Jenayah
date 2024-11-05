@@ -1,5 +1,5 @@
 pacman::p_load(shiny, bslib, sf, tmap, tidyverse, sfdep, shinydashboard, shinythemes, 
-               tmap, tmaptools, ggplot2, gridExtra, ClustGeo, 
+               tmaptools, ggplot2, gridExtra, ClustGeo, 
                ggpubr, cluster, factoextra, NbClust,
                heatmaply, corrplot, psych, GGally)
 
