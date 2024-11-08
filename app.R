@@ -18,14 +18,14 @@ ui <- navbarPage(
   theme=shinytheme("darkly"),
   id = "navbarID",
   tabPanel("Home",
-     sidebarLayout(
-       sidebarPanel(
-         h3("Side Bar is here")
-       ),
-       mainPanel(
-         h3("Main Panel")
-       )
-     )
+           sidebarLayout(
+             sidebarPanel(
+               h3("Side Bar is here")
+             ),
+             mainPanel(
+               h3("Main Panel")
+             )
+           )
   ),
   eda_ui,
   spa_ui,
@@ -36,8 +36,8 @@ ui <- navbarPage(
 ###### Shiny Server ######
 #========================# 
 
-server <- function(input, output){
-  eda_server(input, output)
+server <- function(input, output, session){
+  eda_server(input, output, session)
   spa_server(input, output)
   spc_server(input, output)
 }

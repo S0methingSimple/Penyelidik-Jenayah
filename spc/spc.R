@@ -17,38 +17,38 @@ rownames(clust_vars) <- clust_rownames
 rownames(clust_vars.norm) <- clust_rownames
 
 spc_ui <- tabPanel("Spatial Clustering",
-  h1("Spatial Crime Clustering"), 
-  navset_card_pill( 
-     nav_panel("Exploratory Data Analysis", 
-       sidebarLayout(
-         sidebarPanel(
-           selectInput(
-             "spc_sel_year",
-             "Year",
-             choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022),
-             selected = 1
-           ),
-           radioButtons( 
-             "spc_rad_type", 
-             "Plot Type", 
-             choices = list( 
-               "Histogram" = 1, 
-               "Density" = 2, 
-               "Boxplot" = 3 
-             ) 
-           )
-         ),
-         mainPanel(
-           plotOutput("spc_explorePlot",
-                      width = "95%", 
-                      height = 580)
-           
-         )
-       )
-     ), 
-     nav_panel("B", "Page B content"), 
-     nav_panel("C", "Page C content")
-   )
+                   h1("Spatial Crime Clustering"), 
+                   navset_card_pill( 
+                     nav_panel("Exploratory Data Analysis", 
+                               sidebarLayout(
+                                 sidebarPanel(
+                                   selectInput(
+                                     "spc_sel_year",
+                                     "Year",
+                                     choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022),
+                                     selected = 1
+                                   ),
+                                   radioButtons( 
+                                     "spc_rad_type", 
+                                     "Plot Type", 
+                                     choices = list( 
+                                       "Histogram" = 1, 
+                                       "Density" = 2, 
+                                       "Boxplot" = 3 
+                                     ) 
+                                   )
+                                 ),
+                                 mainPanel(
+                                   plotOutput("spc_explorePlot",
+                                              width = "95%", 
+                                              height = 580)
+                                   
+                                 )
+                               )
+                     ), 
+                     nav_panel("B", "Page B content"), 
+                     nav_panel("C", "Page C content")
+                   )
 )
 
 spc_server <- function(input, output) {
@@ -73,4 +73,3 @@ spc_server <- function(input, output) {
     grid.arrange(grobs = hist_list, ncol = 4, nrow = 3)
   })
 }
-
