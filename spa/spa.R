@@ -134,6 +134,10 @@ spa_ui <- tabPanel("Spatial Autocorrelation",
                              label = "Statistical Significance:", 
                              min = 0.05, max = 1,
                              value = 0.05, step = 0.05),
+                 sliderInput(inputId = "HCSASims", 
+                             label = "Number of Simulations:", 
+                             min = 99, max = 499,
+                             value = 99, step = 100),
                  actionButton("GiStarUpdate", "Update Plot")
                ),
                mainPanel(
