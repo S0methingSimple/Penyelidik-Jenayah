@@ -6,6 +6,7 @@ pacman::p_load(shiny, bslib, sf, tmap, tidyverse, sfdep, shinydashboard, shinyth
 # Load analytics module
 source("./eda/eda.R")
 source("./spa/spa.R")
+source("./spc/spc.R")
 
 #========================#
 ######## Shiny UI ########
@@ -27,7 +28,8 @@ ui <- navbarPage(
      )
   ),
   eda_ui,
-  spa_ui
+  spa_ui,
+  spc_ui
 )
 
 #========================#
@@ -37,6 +39,7 @@ ui <- navbarPage(
 server <- function(input, output){
   eda_server(input, output)
   spa_server(input, output)
+  spc_server(input, output)
 }
 
 shinyApp (ui=ui, server=server)
