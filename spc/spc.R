@@ -157,39 +157,82 @@ cc_func <- function(input, output) {
   
 }
 
+cr_func <- function(input, output) {
+  
+  hc_result <- eventReactive(input$spc_cr_hc_btn, get_clust(input, output, 1))
+  output$spc_cr_hc <- renderTmap(tmap_plot(hc_result()$cluster))
+  output$spc_cr_hc_dd <- renderPlot(dendo_plot(hc_result()$dendo))
+  
+  hg_result <- eventReactive(input$spc_cr_hg_btn, get_clust(input, output, 2))
+  output$spc_cr_hg <- renderTmap(tmap_plot(hg_result()$cluster))
+  output$spc_cr_hg_dd <- renderPlot(dendo_plot(hg_result()$dendo))
+  
+  sk_result <- eventReactive(input$spc_cr_sk_btn, get_clust(input, output, 3))
+  output$spc_cr_sk <- renderTmap(tmap_plot(sk_result()$cluster))
+  
+}
+
 get_clust <- function(input, output, type) {
   clust_vars <- proc_df(as.integer(input$spc_cr_sel_year), NULL, 2, FALSE)
   clust_sf <- proc_df(as.integer(input$spc_cr_sel_year), NULL, 2, TRUE)
   n_clust <- input$spc_cr_sel_nc
   
-
   if (type <= 2) {
     proxmat <- dist(clust_vars, method = 'euclidean')
     if (type == 1) {
       clust = hclust(proxmat, method = input$spc_cr_hc_sel_mtd)
     } else { # Geo
       distmat <- as.dist(st_distance(clust_sf, clust_sf))
-      clust <- hclustgeo(proxmat, distmat, alpha = 0.1)
+      clust <- hclustgeo(proxmat, distmat, alpha = input$spc_cr_hg_sel_alp)
     }
     
     groups <- as.factor(cutree(clust, k=n_clust))
   } else {
     nb <- map_nb(poly2nb(clust_sf))
-    clust_vars.w <- nb2listw(nb, nbcosts(nb, clust_vars), style="W")
+    clust_vars.w <- nb2listw(nb, nbcosts(nb, clust_vars), style=input$spc_cr_sk_sel_sty)
     clust_vars.mst <- mstree(clust_vars.w)
-    clust <- spdep::skater(edges = clust_vars.mst[,1:2], 
-                           data = clust_vars, 
-                           method = "euclidean", 
-                           ncuts = (n_clust - 1))
+    clust <- spdep::skater(edges = clust_vars.mst[,1:2], data = clust_vars, method = "euclidean", ncuts = (n_clust - 1))
     
     groups <- as.factor(clust$groups)
   }
   
   cluster <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
-  return(cluster)
-    
-
+  return(list(
+    cluster = cluster,
+    dendo = list(
+      clust = clust, 
+      n_clust = n_clust
+    )
+  ))
   
+}
+
+tmap_plot <- function(cluster, view = TRUE, title = "Clustering Result") {
+  map <- tm_shape(cluster) +
+    tm_fill("CLUSTER", 
+            palette = "Set3") +
+    tm_layout(main.title = title,
+              main.title.position = "center",
+              main.title.size = 1.2,
+              legend.height = 0.45, 
+              legend.width = 0.35,
+              frame = TRUE) +
+    tm_borders(alpha = 0.5) +
+    tm_grid(alpha =0.2)
+  
+  if (view) {
+    map + tm_view(set.zoom.limits = c(6, 7))
+  }
+  
+  return(map)
+  
+}
+
+dendo_plot <- function(dendo) {
+  plot(dendo$clust, cex = 0.6)
+  rect.hclust(clust, 
+              k = dendo$n_clust, 
+              border = 2:5)
 }
 
 map_nb <- function(nb) {
@@ -203,40 +246,4 @@ map_nb <- function(nb) {
   nb[[70]] <- c(nb[[70]], as.integer(71))
   nb
 }
-
-tmap_plot <- function(cluster, view, title = "Clustering Result") {
-  map <- tm_shape(cluster) +
-    tm_fill("CLUSTER", 
-            palette = "Set3") +
-    tm_layout(main.title = title,
-              main.title.position = "center",
-              main.title.size = 1.2,
-              legend.height = 0.45, 
-              legend.width = 0.35,
-              frame = TRUE) +
-    tm_borders(alpha = 0.5) +
-    tm_grid(alpha =0.2)
-    
-  if (view) {
-    map + tm_view(set.zoom.limits = c(6, 7))
-  }
-  
-  return(map)
-  
-}
-
-cr_func <- function(input, output) {
-  
-  hc_result <- eventReactive(input$spc_cr_hc_btn, get_clust(input, output, 1))
-  output$spc_cr_hc <- renderTmap(tmap_plot(hc_result(), TRUE))
-  
-  hg_result <- eventReactive(input$spc_cr_hg_btn, get_clust(input, output, 2))
-  output$spc_cr_hg <- renderTmap(tmap_plot(hg_result(), TRUE))
-  
-  sk_result <- eventReactive(input$spc_cr_sk_btn, get_clust(input, output, 3))
-  output$spc_cr_sk <- renderTmap(tmap_plot(sk_result(), TRUE))
-  
-}
-
-
 

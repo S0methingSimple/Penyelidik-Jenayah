@@ -74,11 +74,11 @@ cc_panel <- nav_panel("Cluster Configuration",
 
 cr_panel <- nav_panel("Cluster Result", 
     wellPanel(
-      fluidRow(column(width = 12, h5("Cluster Filter"))),
+      fluidRow(column(width = 12, h4("Cluster Filter"))),
       hr(),
       fluidRow(
         column(width = 4, selectInput("spc_cr_sel_year", "Year", choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022), selected = 1)),
-        column(width = 4, sliderInput("spc_cr_sel_nc", "No. Cluster", min = 3, max = 15, value = 7))
+        column(width = 8, sliderInput("spc_cr_sel_nc", "No. Cluster", min = 3, max = 15, value = 7))
       )
     ),
     navset_tab( 
@@ -94,23 +94,32 @@ cr_panel <- nav_panel("Cluster Result",
                      actionButton("spc_cr_hc_btn", "Update")
                    ),
                    mainPanel(
-                     tmapOutput("spc_cr_hc")
+                     tmapOutput("spc_cr_hc"),
+                     plotOutput("spc_cr_hc_dd")
                    )
                  )
       ), 
       nav_panel("Hierarchical (Geo)", 
                 sidebarLayout(
                   sidebarPanel(
+                    sliderInput("spc_cr_hg_sel_alp", "Choice Alpha", min = 0.0, max = 1.0, value = 0.5),
                     actionButton("spc_cr_hg_btn", "Update")
                   ),
                   mainPanel(
-                    tmapOutput("spc_cr_hg")
+                    tmapOutput("spc_cr_hg"),
+                    plotOutput("spc_cr_hg_dd")
                   )
                 )
       ), 
       nav_panel("Skater", 
                 sidebarLayout(
                   sidebarPanel(
+                    selectInput(
+                      "spc_cr_sk_sel_sty",
+                      "Style",
+                      choices = c("W", "B", "C", "U", "S"),
+                      selected = 1
+                    ),
                     actionButton("spc_cr_sk_btn", "Update")
                   ),
                   mainPanel(
