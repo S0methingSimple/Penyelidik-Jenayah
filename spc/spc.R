@@ -159,6 +159,9 @@ cc_func <- function(input, output) {
 
 cr_func <- function(input, output) {
   
+  hm_result <- eventReactive(input$spc_cr_hm_btn, get_clust(input, output, 1))
+  output$spc_cr_hm <- renderPlotly(heatmap_plot(hm_result()$heatmap))
+  
   hc_result <- eventReactive(input$spc_cr_hc_btn, get_clust(input, output, 1))
   output$spc_cr_hc <- renderTmap(tmap_plot(hc_result()$cluster))
   output$spc_cr_hc_dd <- renderPlot(dendo_plot(hc_result()$dendo))
@@ -198,6 +201,11 @@ get_clust <- function(input, output, type) {
   
   cluster <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
   return(list(
+    heatmap = list(
+      clust_vars = clust_vars,
+      n_clust = n_clust,
+      sel_mtd = input$spc_cr_hm_sel_mtd
+    ),
     cluster = cluster,
     dendo = list(
       clust = clust, 
@@ -233,6 +241,23 @@ dendo_plot <- function(dendo) {
   rect.hclust(clust, 
               k = dendo$n_clust, 
               border = 2:5)
+}
+
+heatmap_plot <- function(heatmap) {
+  heatmaply(normalize(data.matrix(heatmap$clust_vars)),
+            Colv=NA,
+            dist_method = "euclidean",
+            hclust_method = heatmap$sel_mtd,
+            seriate = "OLO",
+            colors = OrRd,
+            k_row = heatmap$n_clust,
+            margins = c(NA,50,50,NA),
+            fontsize_row = 4,
+            fontsize_col = 5,
+            main="Crime Indicators Heatmap",
+            xlab = "Crime and Demographic Indicators",
+            ylab = "Districts"
+  )
 }
 
 map_nb <- function(nb) {

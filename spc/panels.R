@@ -74,23 +74,28 @@ cc_panel <- nav_panel("Cluster Configuration",
 
 cr_panel <- nav_panel("Cluster Result", 
     wellPanel(
-      fluidRow(column(width = 12, h4("Cluster Filter"))),
-      hr(),
       fluidRow(
         column(width = 4, selectInput("spc_cr_sel_year", "Year", choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022), selected = 1)),
         column(width = 8, sliderInput("spc_cr_sel_nc", "No. Cluster", min = 3, max = 15, value = 7))
-      )
+      ),
+      hr()
     ),
     navset_tab( 
+      nav_panel("Heatmap", 
+                sidebarLayout(
+                  sidebarPanel(
+                    selectInput("spc_cr_hm_sel_mtd", "Method", choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"), selected = 1),
+                    actionButton("spc_cr_hm_btn", "Update")
+                  ),
+                  mainPanel(
+                    plotlyOutput("spc_cr_hm")
+                  )
+                )
+      ),
       nav_panel("Hierarchical", 
                  sidebarLayout(
                    sidebarPanel(
-                     selectInput(
-                       "spc_cr_hc_sel_mtd",
-                       "Method",
-                       choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"),
-                       selected = 1
-                     ),
+                     selectInput("spc_cr_hc_sel_mtd", "Method", choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"), selected = 1),
                      actionButton("spc_cr_hc_btn", "Update")
                    ),
                    mainPanel(
