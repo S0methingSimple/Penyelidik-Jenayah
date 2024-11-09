@@ -58,38 +58,63 @@ cc_panel <- nav_panel("Cluster Configuration",
                             selected = 1
                           ),
                           uiOutput("spc_cc_sel_mtd"),
+                          uiOutput("spc_cc_sel_minc"),
+                          sliderInput("spc_cc_sel_maxc", "Max Cluster", min = 8, max = 15, value = 10), 
                           actionButton("spc_cc_btn", "Update"),
                           helpText(
                             "Create demographic maps with information from the 2010 US Census."
                           )
                         ),
                         mainPanel(
-                          htmlOutput("spc_summary"),
-                          plotOutput("spc_configOut")
+                          plotOutput("spc_configOut"),
+                          htmlOutput("spc_summary")
                         )
                       )
 )
 
 cr_panel <- nav_panel("Cluster Result", 
-                      sidebarLayout(
-                        sidebarPanel(
-                          selectInput(
-                            "spc_cr_sel_year",
-                            "Year",
-                            choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022),
-                            selected = 1
-                          ),
-                          radioButtons( 
-                            "spc_cr_rad_style", 
-                            "Style", 
-                            choices = list("NB Clust" = 1, "Fviz" = 2),
-                            selected = 1
-                          ),
-                          uiOutput("spc_cr_sel_mtd"),
-                          actionButton("spc_cr_btn", "Update")
-                        ),
-                        mainPanel(
-                          
-                        )
-                      )
+    wellPanel(
+      fluidRow(column(width = 12, h5("Cluster Filter"))),
+      hr(),
+      fluidRow(
+        column(width = 4, selectInput("spc_cr_sel_year", "Year", choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022), selected = 1)),
+        column(width = 4, sliderInput("spc_cr_sel_nc", "No. Cluster", min = 3, max = 15, value = 7))
+      )
+    ),
+    navset_tab( 
+      nav_panel("Hierarchical", 
+                 sidebarLayout(
+                   sidebarPanel(
+                     actionButton("spc_cr_hc_btn", "Update")
+                   ),
+                   mainPanel(
+                     tmapOutput("spc_cr_hc")
+                   )
+                 )
+      ), 
+      nav_panel("Hierarchical (Geo)", 
+                sidebarLayout(
+                  sidebarPanel(
+                    actionButton("spc_cr_hg_btn", "Update")
+                  ),
+                  mainPanel(
+                    tmapOutput("spc_cr_hg")
+                  )
+                )
+      ), 
+      nav_panel("Skater", 
+                sidebarLayout(
+                  sidebarPanel(
+                    actionButton("spc_cr_sk_btn", "Update")
+                  ),
+                  mainPanel(
+                    tmapOutput("spc_cr_sk")
+                  )
+                )
+      ), 
+      nav_panel("Comparison", "Page C content") 
+  
+  )
 )
+  
+  
