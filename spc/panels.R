@@ -85,6 +85,12 @@ cr_panel <- nav_panel("Cluster Result",
       nav_panel("Hierarchical", 
                  sidebarLayout(
                    sidebarPanel(
+                     selectInput(
+                       "spc_cr_hc_sel_mtd",
+                       "Method",
+                       choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"),
+                       selected = 1
+                     ),
                      actionButton("spc_cr_hc_btn", "Update")
                    ),
                    mainPanel(
