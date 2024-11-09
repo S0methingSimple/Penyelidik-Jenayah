@@ -55,6 +55,12 @@ spc_ui <- tabPanel("Spatial Clustering",
 )
 
 spc_server <- function(input, output) {
+  ve_func(input, output)
+  cc_func(input, output)
+  
+}
+
+ve_func <- function(input, output) {
   output$spc_explorePlot <- renderPlot({
     clust_vars <- proc_df(as.integer(input$spc_sel_year), input$spc_sel_states, input$spc_rad_std, FALSE)
     
@@ -73,35 +79,11 @@ spc_server <- function(input, output) {
           ggtitle(str_to_title(str_replace_all(col, "_", " ")))
       }
     })
-    
     grid.arrange(grobs = hist_list, ncol = 4, nrow = 3)
   })
-  
-  output$spc_configOut <- renderPlot({
-    
-    nbc <- nb_clust_result()
-    
-    nbc
-    
-  })
-  
-  
-  nb_clust_result <- eventReactive(input$spc_cc_btn, {
-    
-    set.seed(12345)
-    clust_vars <- proc_df(as.integer(input$spc_cc_sel_year), NULL, 2, FALSE)
-    sel_style <- as.integer(input$spc_cc_rad_style) 
-    sel_mtd <- input$spc_cc_sel_mtd
-    
-    if (sel_style == 1) {
-      sel_mtd <- sel_mtd %||% "ward.D"
-      nbc <- NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd)
-    } else {
-      nbc <- NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd)
-    }
-    
-    return(nbc)
-  })
+}
+
+cc_func <- function(input, output) {
   
   output$spc_cc_sel_mtd <- renderUI({
     sel_style <- as.integer(input$spc_cc_rad_style) 
@@ -113,9 +95,56 @@ spc_server <- function(input, output) {
     )
   })
   
+  nb_clust_result <- eventReactive(input$spc_cc_btn, {
+    
+    set.seed(12345)
+    clust_vars <- proc_df(as.integer(input$spc_cc_sel_year), NULL, 2, FALSE)
+    sel_style <- as.integer(input$spc_cc_rad_style) 
+    sel_mtd <- input$spc_cc_sel_mtd
+    
+    if (sel_style == 1) {
+      sel_mtd <- sel_mtd %||% "ward.D"
+      res <- NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd)
+      res$console_output <- paste(capture.output(NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd))[1:24], collapse = "<br>")
+    } else {
+      sel_mtd <- sel_mtd %||% "silhouette"
+      res <- fviz_nbclust(clust_vars, FUNcluster = hcut, method = sel_mtd, k.max = 10)
+    }
+    
+    return(res)
+  })
   
-
-
+  output$spc_summary <- renderUI({
+    sel_style <- as.integer(input$spc_cc_rad_style) 
+    if (sel_style == 1) {
+      HTML(nb_clust_result()$console_output)
+    }
+  })
+  
+  output$spc_configOut <- renderPlot({
+    
+    nbc <- nb_clust_result()
+    sel_style <- as.integer(input$spc_cc_rad_style) 
+    if (sel_style == 1) {
+      row_data <- as.data.frame(nbc$Best.nc)["Number_clusters", ]
+      row_data_long <- pivot_longer(row_data, cols = colnames(row_data)) %>%
+        filter(value != 0)
+      
+      ggplot(row_data_long, aes(x = name, y = value, fill = value)) +
+        geom_bar(stat = "identity") +
+        labs(title = "Best Number of Clusters by Index",
+             x = "Index",
+             y = "Number of Clusters") +
+        theme_bw() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+    } else {
+      nbc
+    }
+    
+    
+  })
   
 }
+
+
 

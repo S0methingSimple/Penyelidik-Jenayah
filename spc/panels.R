@@ -58,11 +58,38 @@ cc_panel <- nav_panel("Cluster Configuration",
                             selected = 1
                           ),
                           uiOutput("spc_cc_sel_mtd"),
-                          actionButton("spc_cc_btn", "Update")
+                          actionButton("spc_cc_btn", "Update"),
+                          helpText(
+                            "Create demographic maps with information from the 2010 US Census."
+                          )
                         ),
                         mainPanel(
-                          plotOutput("spc_configOut"),
-                          verbatimTextOutput("spc_summary")
+                          htmlOutput("spc_summary"),
+                          plotOutput("spc_configOut")
+                        )
+                      )
+)
+
+cr_panel <- nav_panel("Cluster Result", 
+                      sidebarLayout(
+                        sidebarPanel(
+                          selectInput(
+                            "spc_cr_sel_year",
+                            "Year",
+                            choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022),
+                            selected = 1
+                          ),
+                          radioButtons( 
+                            "spc_cr_rad_style", 
+                            "Style", 
+                            choices = list("NB Clust" = 1, "Fviz" = 2),
+                            selected = 1
+                          ),
+                          uiOutput("spc_cr_sel_mtd"),
+                          actionButton("spc_cr_btn", "Update")
+                        ),
+                        mainPanel(
+                          
                         )
                       )
 )
