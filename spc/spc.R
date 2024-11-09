@@ -157,79 +157,84 @@ cc_func <- function(input, output) {
   
 }
 
-get_plot <- function(input, output, type) {
+get_clust <- function(input, output, type) {
   clust_vars <- proc_df(as.integer(input$spc_cr_sel_year), NULL, 2, FALSE)
   clust_sf <- proc_df(as.integer(input$spc_cr_sel_year), NULL, 2, TRUE)
   n_clust <- input$spc_cr_sel_nc
   
-  if (type <= 3) {
-    if (type <= 2) {
-      proxmat <- dist(clust_vars, method = 'euclidean')
-      if (type == 1) {
-        clust = hclust(proxmat, method = 'ward.D')
-        plot_title = paste("Hierarchical Clustering - K:", n_clust)
-      } else { # Geo
-        distmat <- as.dist(st_distance(clust_sf, clust_sf))
-        clust <- hclustgeo(proxmat, distmat, alpha = 0.1)
-        plot_title = paste("Hierarchical Clustering (Geo) - K:", n_clust)
-      }
-      
-      groups <- as.factor(cutree(clust, k=n_clust))
-    } else {
-      nb <- poly2nb(clust_sf)
-      nb[[17]] <- as.integer(c(13, 66, 71))
-      nb[[13]] <- c(nb[[13]], as.integer(17))
-      nb[[66]] <- c(nb[[66]], as.integer(17))
-      nb[[71]] <- c(nb[[71]], as.integer(17))
-      nb[[67]] <- c(nb[[67]], as.integer(68))
-      nb[[68]] <- c(nb[[68]], as.integer(67))
-      nb[[71]] <- c(nb[[71]], as.integer(70))
-      nb[[70]] <- c(nb[[70]], as.integer(71))
-      lcosts <- nbcosts(nb, clust_vars)
-      clust_vars.w <- nb2listw(nb, lcosts, style="B")
-      clust_vars.mst <- mstree(clust_vars.w)
-      clust <- spdep::skater(edges = clust_vars.mst[,1:2], 
-                             data = clust_vars, 
-                             method = "euclidean", 
-                             ncuts = (n_clust - 1))
-      
-      groups <- as.factor(clust$groups)
-      plot_title = paste("Skater Clustering - K:", n_clust)
+
+  if (type <= 2) {
+    proxmat <- dist(clust_vars, method = 'euclidean')
+    if (type == 1) {
+      clust = hclust(proxmat, method = input$spc_cr_hc_sel_mtd)
+    } else { # Geo
+      distmat <- as.dist(st_distance(clust_sf, clust_sf))
+      clust <- hclustgeo(proxmat, distmat, alpha = 0.1)
     }
     
+    groups <- as.factor(cutree(clust, k=n_clust))
+  } else {
+    nb <- map_nb(poly2nb(clust_sf))
+    clust_vars.w <- nb2listw(nb, nbcosts(nb, clust_vars), style="W")
+    clust_vars.mst <- mstree(clust_vars.w)
+    clust <- spdep::skater(edges = clust_vars.mst[,1:2], 
+                           data = clust_vars, 
+                           method = "euclidean", 
+                           ncuts = (n_clust - 1))
     
-    cluster <- cbind(clust_sf, as.matrix(groups)) %>%
-      rename(`CLUSTER`=`as.matrix.groups.`)
-    
-    tm_shape(cluster) +
-      tm_fill("CLUSTER", 
-              palette = "Set3",
-              title = "Cluster") +
-      tm_layout(main.title = plot_title,
-                main.title.position = "center",
-                main.title.size = 1.2,
-                legend.height = 0.45, 
-                legend.width = 0.35,
-                frame = TRUE) +
-      tm_borders(alpha = 0.5) +
-      tm_grid(alpha =0.2) +
-      tm_view(set.zoom.limits = c(6, 7))
-    
-  } 
+    groups <- as.factor(clust$groups)
+  }
   
+  cluster <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
+  return(cluster)
+    
+
+  
+}
+
+map_nb <- function(nb) {
+  nb[[17]] <- as.integer(c(13, 66, 71))
+  nb[[13]] <- c(nb[[13]], as.integer(17))
+  nb[[66]] <- c(nb[[66]], as.integer(17))
+  nb[[71]] <- c(nb[[71]], as.integer(17))
+  nb[[67]] <- c(nb[[67]], as.integer(68))
+  nb[[68]] <- c(nb[[68]], as.integer(67))
+  nb[[71]] <- c(nb[[71]], as.integer(70))
+  nb[[70]] <- c(nb[[70]], as.integer(71))
+  nb
+}
+
+tmap_plot <- function(cluster, view, title = "Clustering Result") {
+  map <- tm_shape(cluster) +
+    tm_fill("CLUSTER", 
+            palette = "Set3") +
+    tm_layout(main.title = title,
+              main.title.position = "center",
+              main.title.size = 1.2,
+              legend.height = 0.45, 
+              legend.width = 0.35,
+              frame = TRUE) +
+    tm_borders(alpha = 0.5) +
+    tm_grid(alpha =0.2)
+    
+  if (view) {
+    map + tm_view(set.zoom.limits = c(6, 7))
+  }
+  
+  return(map)
   
 }
 
 cr_func <- function(input, output) {
   
-  hc_result <- eventReactive(input$spc_cr_hc_btn, get_plot(input, output, 1))
-  output$spc_cr_hc <- renderTmap(hc_result())
+  hc_result <- eventReactive(input$spc_cr_hc_btn, get_clust(input, output, 1))
+  output$spc_cr_hc <- renderTmap(tmap_plot(hc_result(), TRUE))
   
-  hg_result <- eventReactive(input$spc_cr_hg_btn, get_plot(input, output, 2))
-  output$spc_cr_hg <- renderTmap(hg_result())
+  hg_result <- eventReactive(input$spc_cr_hg_btn, get_clust(input, output, 2))
+  output$spc_cr_hg <- renderTmap(tmap_plot(hg_result(), TRUE))
   
-  sk_result <- eventReactive(input$spc_cr_sk_btn, get_plot(input, output, 3))
-  output$spc_cr_sk <- renderTmap(sk_result())
+  sk_result <- eventReactive(input$spc_cr_sk_btn, get_clust(input, output, 3))
+  output$spc_cr_sk <- renderTmap(tmap_plot(sk_result(), TRUE))
   
 }
 
