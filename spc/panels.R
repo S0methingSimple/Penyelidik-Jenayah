@@ -58,16 +58,16 @@ cc_panel <- nav_panel("Cluster Configuration",
                             selected = 1
                           ),
                           uiOutput("spc_cc_sel_mtd"),
-                          uiOutput("spc_cc_sel_minc"),
-                          sliderInput("spc_cc_sel_maxc", "Max Cluster", min = 8, max = 15, value = 10), 
+                          sliderInput("spc_cc_sel_rng", "Cluster Range", min = 3, max = 15, value = c(5, 12)), 
                           actionButton("spc_cc_btn", "Update"),
                           helpText(
                             "Create demographic maps with information from the 2010 US Census."
                           )
                         ),
                         mainPanel(
-                          plotOutput("spc_configOut"),
-                          htmlOutput("spc_summary")
+                          htmlOutput("spc_summary"),
+                          hr(),
+                          plotOutput("spc_configOut")
                         )
                       )
 )

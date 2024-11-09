@@ -96,14 +96,6 @@ cc_func <- function(input, output) {
     )
   })
   
-  output$spc_cc_sel_minc <- renderUI({
-    sel_style <- as.integer(input$spc_cc_rad_style) 
-    
-    if (sel_style == 1) {
-      sliderInput("spc_cc_sel_minc", "Min Cluster", min = 1, max = 6, value = 5)
-    }
-  })
-  
   nb_clust_result <- eventReactive(input$spc_cc_btn, {
     
     set.seed(12345)
@@ -114,12 +106,12 @@ cc_func <- function(input, output) {
     if (sel_style == 1) {
       sel_mtd <- sel_mtd %||% "ward.D"
       res <- NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd)
-      res$console_output <- paste(capture.output(NbClust(clust_vars, distance = "euclidean", min.nc = input$spc_cc_sel_minc, max.nc = input$spc_cc_sel_maxc, method = sel_mtd))[11:24], collapse = "<br>")
+      res$console_output <- paste(capture.output(NbClust(clust_vars, distance = "euclidean", min.nc = input$spc_cc_sel_rng[1], max.nc = input$spc_cc_sel_rng[2], method = sel_mtd))[11:24], collapse = "<br>")
       res$sel_style = sel_style
     } else {
       sel_mtd <- sel_mtd %||% "silhouette"
       res <- list(
-        plot = fviz_nbclust(clust_vars, FUNcluster = hcut, method = sel_mtd, k.max = input$spc_cc_sel_maxc),
+        plot = fviz_nbclust(clust_vars, FUNcluster = hcut, method = sel_mtd, k.max = input$spc_cc_sel_rng[2]),
         sel_style = sel_style
       )
     }
