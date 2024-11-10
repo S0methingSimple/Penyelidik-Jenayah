@@ -53,24 +53,27 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
               "Crime per Capita" = "crimes_pc"
             )
           ),
-          selectInput(
+          selectizeInput(
             "state_select",
-            "Select State",
+            "Select States",
             choices = states, # Will be updated in server
-            selected = NULL
-          ),
+            selected = NULL,
+            options = list(placeholder = 'Select states or leave empty for all')
+            ),
+          
           selectInput(
             "choro_category_select",
             "Crime Category",
             choices = c("All", "assault", "property"),
             selected = "All"
           ),
-          selectInput(
+          selectizeInput(
             "choro_type_select",
             "Crime Type",
             choices = NULL,
             multiple = TRUE,
-            selected = NULL
+            selected = NULL,
+            options = list(placeholder = 'Select types or leave empty for all')
           ),
         ),
         mainPanel(
@@ -80,13 +83,13 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
         )
       )
     ),
-    # Second Panel - Histogram Analysis
+    # Second Panel - 
     nav_panel(
-      "Histogram Analysis",
+      "Crime Trends Analysis Dashboard",
       sidebarLayout(
         sidebarPanel(
           selectInput(
-            "hist_year",
+            "trend_sel_year",
             "Year",
             choices = list(
               "All" = 0,
@@ -97,39 +100,41 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
             ),
             selected = 0
           ),
-          radioButtons(
-            "hist_measure",
-            "Crime Measure",
-            choices = list(
-              "Overall Crime Count" = "crimes",
-              "Crime per Capita" = "crimes_pc"
-            )
-          ), 
-          selectInput(
-            "state_select",
-            "Select State",
-            choices = states, # Will be updated in server
-            multiple = TRUE
-          ),
-          selectInput(
-            "hist_category_select",
-            "Crime Category",
-            choices = c("All", "assault", "property"),
-            selected = "All"
-          ),
-          selectInput(
-            "hist_type_select",
-            "Crime Type",
-            choices = NULL,
-            multiple = TRUE
-          ),
+          
+          # Metric selection
+          radioButtons("trend_metric", "Select Metric:",
+                       choices = c("Total Crimes" = "crimes",
+                                   "Crimes per Capita" = "crimes_pc"),
+                       selected = "crimes"),
+          
+          # State selection
+          selectizeInput("trend_state_select", "Select States",
+                         choices = states,
+                         multiple = TRUE,
+                         selected = NULL,
+                         options = list(placeholder = 'Select states or leave empty for all')),
+          
+          # Category selection
+          selectInput("trend_category_select", "Crime Category",
+                      choices = c("All", "assault", "property"),
+                      selected = "All"),
+          
+          # Type selection
+          selectizeInput("trend_type_select",
+                         "Crime Type",
+                         choices = NULL,
+                         multiple = TRUE,
+                         selected = NULL,
+                         options = list(placeholder = 'Select types or leave empty for all')),
         ),
         mainPanel(
-          plotOutput("histogram_plot",
-                     width = "95%",
-                     height = 580)
-        )
-      )
+          fluidRow(
+            column(12,
+                   plotlyOutput("trend_plot", height = "400px")
+            )
+          ),
+        ),
+      ),
     ),
     nav_panel(
       "State Comparison",
@@ -157,7 +162,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
           ),
           selectInput(
             "state_select",
-            "Select State",
+            "Select States",
             choices = states,
             multiple = TRUE,
             selected = "JOHOR"
@@ -177,7 +182,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
     )
   )
 )
-
+  
 eda_server <- function(input, output, session) {
   # Update crime type choices based on selected category
   observe({
@@ -191,13 +196,13 @@ eda_server <- function(input, output, session) {
   })
   # Update crime type choices based on selected category
   observe({
-    if (input$hist_category_select != "All") {
-      types <- unique(eda_sf$type[eda_sf$category == input$hist_category_select])
+    if (input$trend_category_select != "All") {
+     types <- unique(eda_sf$type[eda_sf$category == input$trend_category_select])
     } else {
-      types <- unique(eda_sf$type)
+     types <- unique(eda_sf$type)
     }
-    updateSelectInput(session, "hist_type_select",
-                      choices = types)
+    updateSelectInput(session, "trend_type_select",
+                    choices = types)
   })
 
   # Choropleth Plot
@@ -228,18 +233,45 @@ eda_server <- function(input, output, session) {
             plot.title = element_text(hjust = 0.5))
   })
   
-  # Comparison Plot and Table
-  output$histogram_plot <- renderPlot({
-      # Filter data based on selections
-      filtered_data <- eda_sf %>%
-        filter(year %in% ifelse(input$hist_year == 0, unique(year), input$hist_year)) %>%
-        filter(category %in% ifelse(input$hist_category_select == "All", unique(category), input$hist_category_select))
+  output$trend_plot <- renderPlotly({
+    base_data <- eda_sf %>%
+      st_drop_geometry() %>%
+      dplyr::select(state, year, category, type, crimes, crimes_pc)
     
-    p <- ggplot(filtered_data, aes(x = get(input$hist_measure))) +
-      geom_histogram(fill = "lightblue", color = "black") +
-      labs(title = "Crime Distribution",
-           x = input$hist_measure)
-    p
+    if (is.null(input$trend_state_select)) {
+      filtered_data <- base_data %>%
+        filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
+        filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
+        filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
+    } else {
+      filtered_data <- base_data %>%
+        filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
+        filter(state %in% input$trend_state_select) %>%
+        filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
+        filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
+    }
+    
+    p <- ggplot(filtered_data, 
+                aes(x = year, 
+                    y = !!sym(input$trend_metric), 
+                    color = state, 
+                    group = state)) +
+      geom_line(size = 1) +
+      geom_point(size = 3) +
+      theme_minimal() +
+      labs(title = paste("Crime Trends:", 
+                         ifelse(input$trend_category_select == "All", 
+                                "All Categories", 
+                                input$trend_category_select)),
+           x = "Year",
+           y = ifelse(input$trend_metric == "crimes", 
+                      "Total Crimes", 
+                      "Crimes per Capita"),
+           color = "State") +
+      theme(legend.position = "bottom")
+    
+    ggplotly(p) %>%
+      layout(hovermode = "x unified")
   })
   
   # Render choropleth map
