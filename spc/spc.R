@@ -179,6 +179,9 @@ cr_func <- function(input, output) {
   output$spc_cr_sk <- renderTmap(tmap_plot(sk_result()$cluster))
   output$spc_cr_sk_dd <- renderPlot(subchart_plot(sk_result()$sub_plot))
   
+  crc_result <- eventReactive(input$spc_crc_btn, get_clust(input, output, 4))
+  output$spc_crc <- renderPlot(compare_plot(crc_result()$cluster))
+  
 }
 
 get_clust <- function(input, output, type) {
@@ -186,38 +189,62 @@ get_clust <- function(input, output, type) {
   clust_sf <- proc_df(as.integer(input$spc_cr_sel_year), NULL, 2, TRUE)
   n_clust <- input$spc_cr_sel_nc
   
+  # Return vars
+  clust.sf <- NULL
   heatmap <- NULL
+  groups <- NULL
+  groups_list <- list()
   sel_style <- 1
+  comp <- (type == 4) 
   
-  if (type <= 2) {
+  # Return vars
+  hc_mtd <- if (comp) input$spc_crc_hc_sel_mtd else input$spc_cr_hc_sel_mtd
+  hc_alp <- if (comp) input$spc_crc_hg_sel_alp else input$spc_cr_hg_sel_alp
+  sk_sty <- if (comp) input$spc_crc_sk_sel_sty else input$spc_cr_sk_sel_sty
+  
+  if (type == 1 || comp) {
     proxmat <- dist(clust_vars, method = 'euclidean')
-    if (type == 1) {
-      clust = hclust(proxmat, method = input$spc_cr_hc_sel_mtd)
-      sel_style <- input$spc_cr_hc_rad_sty
-      heatmap <- list(
-        clust_vars = clust_vars,
-        n_clust = n_clust,
-        sel_mtd = input$spc_cr_hm_sel_mtd
-      )
-    } else { # Geo
-      distmat <- as.dist(st_distance(clust_sf, clust_sf))
-      clust <- hclustgeo(proxmat, distmat, alpha = input$spc_cr_hg_sel_alp)
-      sel_style <- input$spc_cr_hg_rad_sty
-    }
-    
+    clust = hclust(proxmat, method = hc_mtd)
+    sel_style <- input$spc_cr_hc_rad_sty
+    heatmap <- list(
+      clust_vars = clust_vars,
+      n_clust = n_clust,
+      sel_mtd = input$spc_cr_hm_sel_mtd
+    )
     groups <- as.factor(cutree(clust, k=n_clust))
-  } else {
+    if (comp) {
+      clust.sf$hc <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
+    }
+  } 
+  
+  if (type == 2 || comp) {
+    proxmat <- dist(clust_vars, method = 'euclidean')
+    distmat <- as.dist(st_distance(clust_sf, clust_sf))
+    clust <- hclustgeo(proxmat, distmat, alpha = hc_alp)
+    sel_style <- input$spc_cr_hg_rad_sty
+    groups <- as.factor(cutree(clust, k=n_clust))
+    if (comp) {
+      clust.sf$hg <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
+    }
+  }
+  
+  if  (type == 3 || comp) { 
     set.seed(12345)
     suppressWarnings(nb <- map_nb(poly2nb(clust_sf)))
-    clust_vars.w <- nb2listw(nb, nbcosts(nb, clust_vars), style=input$spc_cr_sk_sel_sty)
+    clust_vars.w <- nb2listw(nb, nbcosts(nb, clust_vars), style = sk_sty)
     clust_vars.mst <- mstree(clust_vars.w)
     clust <- spdep::skater(edges = clust_vars.mst[,1:2], data = clust_vars, method = "euclidean", ncuts = (n_clust - 1))
     sel_style <- input$spc_cr_sk_rad_sty
-    
     groups <- as.factor(clust$groups)
+    if (comp) {
+      clust.sf$sk <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
+    }
+  }
+    
+  if (!comp) {
+    clust.sf <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
   }
   
-  clust.sf <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
   return(list(
     cluster = clust.sf,
     heatmap = heatmap,
@@ -229,6 +256,13 @@ get_clust <- function(input, output, type) {
     )
   ))
   
+}
+
+compare_plot <- function(clusters) {
+  hc_plot <- tmap_plot(clusters$hc, view = FALSE, title = "Hierarchical Cluster")
+  hg_plot <- tmap_plot(clusters$hg, view = FALSE, title = "Hierarchical (GEO) Cluster")
+  sk_plot <- tmap_plot(clusters$sk, view = FALSE, title = "Skater Cluster")
+  tmap_arrange(hc_plot, hg_plot, sk_plot, ncol = 3)
 }
 
 tmap_plot <- function(cluster, view = TRUE, title = "Clustering Result") {
@@ -246,6 +280,8 @@ tmap_plot <- function(cluster, view = TRUE, title = "Clustering Result") {
   
   if (view) {
     map + tm_view(set.zoom.limits = c(6, 7))
+  } else {
+    map + tm_compass(type="8star", size = 2, position = c("right", "top"))
   }
   
   return(map)
