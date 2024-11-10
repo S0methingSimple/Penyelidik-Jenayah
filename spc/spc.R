@@ -78,9 +78,22 @@ ve_func <- function(input, output) {
         ggplot(data = clust_vars, aes(x = .data[[col]])) +
           geom_histogram(color = "black", fill = "lightblue", bins = 20) +
           ggtitle(str_to_title(str_replace_all(col, "_", " ")))
-      }
+      } 
     })
-    grid.arrange(grobs = hist_list, ncol = 4, nrow = 3)
+    
+    if (input$spc_rad_type != 4) {
+      grid.arrange(grobs = hist_list, ncol = 4, nrow = 3)
+    } else {
+      corrplot.mixed(cor(clust_vars),
+                     lower = "ellipse", 
+                     upper = "number",
+                     tl.pos = "lt",
+                     diag = "l",
+                     tl.col = "black",
+                     tl.srt = 45,  
+                     tl.cex = 0.5)
+    }
+    
   })
 }
 
