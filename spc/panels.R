@@ -96,6 +96,7 @@ cr_panel <- nav_panel("Cluster Result",
                  sidebarLayout(
                    sidebarPanel(
                      selectInput("spc_cr_hc_sel_mtd", "Method", choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"), selected = 1),
+                     radioButtons("spc_cr_hc_rad_sty", "Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3, "Dendogram" = 4), selected = 1),
                      actionButton("spc_cr_hc_btn", "Update")
                    ),
                    mainPanel(
@@ -108,6 +109,7 @@ cr_panel <- nav_panel("Cluster Result",
                 sidebarLayout(
                   sidebarPanel(
                     sliderInput("spc_cr_hg_sel_alp", "Choice Alpha", min = 0.0, max = 1.0, value = 0.5),
+                    radioButtons("spc_cr_hg_rad_sty", "Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3, "Dendogram" = 4), selected = 1),
                     actionButton("spc_cr_hg_btn", "Update")
                   ),
                   mainPanel(
@@ -125,10 +127,12 @@ cr_panel <- nav_panel("Cluster Result",
                       choices = c("W", "B", "C", "U", "S"),
                       selected = 1
                     ),
+                    radioButtons("spc_cr_sk_rad_sty", "Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3), selected = 1),
                     actionButton("spc_cr_sk_btn", "Update")
                   ),
                   mainPanel(
-                    tmapOutput("spc_cr_sk")
+                    tmapOutput("spc_cr_sk"),
+                    plotOutput("spc_cr_sk_dd")
                   )
                 )
       ), 
