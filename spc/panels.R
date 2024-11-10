@@ -21,7 +21,8 @@ ve_panel <- nav_panel("Variable Exploration",
                             choices = list( 
                               "Histogram" = 1, 
                               "Density" = 2, 
-                              "Boxplot" = 3 
+                              "Boxplot" = 3,
+                              "Corrplot" = 4
                             )
                           ),
                           radioButtons( 
