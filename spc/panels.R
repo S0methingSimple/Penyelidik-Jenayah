@@ -1,15 +1,8 @@
 ve_panel <- nav_panel("Variable Exploration", 
                       sidebarLayout(
                         sidebarPanel(
-                          selectInput(
-                            "spc_sel_year",
-                            "Year",
-                            choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022),
-                            selected = 1
-                          ),
-                          selectInput(
-                            "spc_sel_states",
-                            "State",
+                          selectInput("spc_sel_year", "Year", choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022), selected = 1),
+                          selectInput("spc_sel_states", "State",
                             choices = u_states,
                             selected = NULL,
                             selectize = TRUE,
@@ -75,11 +68,13 @@ cc_panel <- nav_panel("Cluster Configuration",
 
 cr_panel <- nav_panel("Cluster Result", 
     wellPanel(
+      h3("Cluster Configuration"),
+      hr(),
       fluidRow(
-        column(width = 4, selectInput("spc_cr_sel_year", "Year", choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022), selected = 1)),
-        column(width = 8, sliderInput("spc_cr_sel_nc", "No. Cluster", min = 3, max = 15, value = 7))
-      ),
-      hr()
+        column(width = 3, selectInput("spc_cr_sel_year", "Year", choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022), selected = 1)),
+        column(width = 3, selectInput("spc_cr_sel_pal", "Color Palette", choices = c("Set3", "Set2", "Set1", "Pastel2", "Pastel1", "Paired", "Dark2", "Accent"), selected = 1)),
+        column(width = 6, sliderInput("spc_cr_sel_nc", "No. Cluster", min = 3, max = 15, value = 7))
+      )
     ),
     navset_tab( 
       nav_panel("Heatmap", 
