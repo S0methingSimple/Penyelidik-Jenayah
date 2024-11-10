@@ -122,12 +122,7 @@ cr_panel <- nav_panel("Cluster Result",
       nav_panel("Skater", 
                 sidebarLayout(
                   sidebarPanel(
-                    selectInput(
-                      "spc_cr_sk_sel_sty",
-                      "Style",
-                      choices = c("W", "B", "C", "U", "S"),
-                      selected = 1
-                    ),
+                    selectInput("spc_cr_sk_sel_sty", "Style", choices = c("W", "B", "C", "U", "S"), selected = 1),
                     radioButtons("spc_cr_sk_rad_sty", "Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3), selected = 1),
                     actionButton("spc_cr_sk_btn", "Update")
                   ),
@@ -137,8 +132,19 @@ cr_panel <- nav_panel("Cluster Result",
                   )
                 )
       ), 
-      nav_panel("Comparison", "Page C content") 
-  
+      nav_panel("Comparison", 
+                sidebarLayout(
+                  sidebarPanel(
+                    selectInput("spc_crc_hc_sel_mtd", "HClust: Method", choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"), selected = 1),
+                    sliderInput("spc_crc_hg_sel_alp", "ClustG: Alpha", min = 0.0, max = 1.0, value = 0.5),
+                    selectInput("spc_crc_sk_sel_sty", "Skater: Style", choices = c("W", "B", "C", "U", "S"), selected = 1),
+                    actionButton("spc_crc_btn", "Update")
+                  ),
+                  mainPanel(
+                    plotOutput("spc_crc")
+                  )
+                ) 
+      )
   )
 )
   
