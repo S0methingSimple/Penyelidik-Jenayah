@@ -6,8 +6,8 @@ pacman::p_load(shiny, bslib, sf, tmap, tidyverse, sfdep, shinydashboard, shinyth
 spc_sf <- read_rds("data/spc/spc_sf.rds")
 u_states <- unique(spc_sf$state)
 cc_mtd <- list(
-  c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid", "kmeans"),
-  c("silhouette", "wss", "gap_stat")
+  c("gap_stat", "silhouette", "wss"),
+  c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid", "kmeans")
 )
 
 proc_df <- function(yr, states, norm, sf) {
@@ -117,16 +117,16 @@ cc_func <- function(input, output) {
     sel_mtd <- input$spc_cc_sel_mtd
     
     if (sel_style == 1) {
-      sel_mtd <- sel_mtd %||% "ward.D"
-      res <- NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd)
-      res$console_output <- paste(capture.output(NbClust(clust_vars, distance = "euclidean", min.nc = input$spc_cc_sel_rng[1], max.nc = input$spc_cc_sel_rng[2], method = sel_mtd))[11:24], collapse = "<br>")
-      res$sel_style = sel_style
-    } else {
-      sel_mtd <- sel_mtd %||% "silhouette"
+      sel_mtd <- sel_mtd %||% "gap_stat"
       res <- list(
         plot = fviz_nbclust(clust_vars, FUNcluster = hcut, method = sel_mtd, k.max = input$spc_cc_sel_rng[2]),
         sel_style = sel_style
       )
+    } else {
+      sel_mtd <- sel_mtd %||% "ward.D"
+      res <- NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd)
+      res$console_output <- paste(capture.output(NbClust(clust_vars, distance = "euclidean", min.nc = input$spc_cc_sel_rng[1], max.nc = input$spc_cc_sel_rng[2], method = sel_mtd))[12:24], collapse = "<br>")
+      res$sel_style = sel_style
     }
     
     return(res)
@@ -134,7 +134,7 @@ cc_func <- function(input, output) {
   
   output$spc_summary <- renderUI({
     nbc <- nb_clust_result()
-    if (nbc$sel_style == 1) {
+    if (nbc$sel_style == 2) {
       HTML(nbc$console_output)
     }
   })
@@ -143,6 +143,8 @@ cc_func <- function(input, output) {
     
     nbc <- nb_clust_result()
     if (nbc$sel_style == 1) {
+      nbc$plot
+    } else {
       row_data <- as.data.frame(nbc$Best.nc)["Number_clusters", ]
       row_data_long <- pivot_longer(row_data, cols = colnames(row_data)) %>%
         filter(value != 0)
@@ -154,8 +156,6 @@ cc_func <- function(input, output) {
              y = "Number of Clusters") +
         theme_bw() +
         theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
-    } else {
-      nbc$plot
     }
     
   })
