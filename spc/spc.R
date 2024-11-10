@@ -168,19 +168,19 @@ cr_func <- function(input, output) {
   output$spc_cr_hm <- renderPlotly(heatmaply_plot(hm_result()$heatmap))
   
   hc_result <- eventReactive(input$spc_cr_hc_btn, get_clust(input, output, 1))
-  output$spc_cr_hc <- renderTmap(tmap_plot(hc_result()$cluster))
+  output$spc_cr_hc <- renderTmap(tmap_plot(hc_result()$cluster, hc_result()$palette))
   output$spc_cr_hc_dd <- renderPlot(subchart_plot(hc_result()$sub_plot))
   
   hg_result <- eventReactive(input$spc_cr_hg_btn, get_clust(input, output, 2))
-  output$spc_cr_hg <- renderTmap(tmap_plot(hg_result()$cluster))
+  output$spc_cr_hg <- renderTmap(tmap_plot(hg_result()$cluster, hg_result()$palette))
   output$spc_cr_hg_dd <- renderPlot(subchart_plot(hg_result()$sub_plot))
   
   sk_result <- eventReactive(input$spc_cr_sk_btn, get_clust(input, output, 3))
-  output$spc_cr_sk <- renderTmap(tmap_plot(sk_result()$cluster))
+  output$spc_cr_sk <- renderTmap(tmap_plot(sk_result()$cluster, sk_result()$palette))
   output$spc_cr_sk_dd <- renderPlot(subchart_plot(sk_result()$sub_plot))
   
   crc_result <- eventReactive(input$spc_crc_btn, get_clust(input, output, 4))
-  output$spc_crc <- renderPlot(compare_plot(crc_result()$cluster))
+  output$spc_crc <- renderPlot(compare_plot(crc_result()$cluster, crc_result()$palette))
   
 }
 
@@ -247,6 +247,7 @@ get_clust <- function(input, output, type) {
   
   return(list(
     cluster = clust.sf,
+    palette = input$spc_cr_sel_pal,
     heatmap = heatmap,
     sub_plot = list(
       sel_style = sel_style,
@@ -258,20 +259,20 @@ get_clust <- function(input, output, type) {
   
 }
 
-compare_plot <- function(clusters) {
-  hc_plot <- tmap_plot(clusters$hc, view = FALSE, title = "Hierarchical Cluster")
-  hg_plot <- tmap_plot(clusters$hg, view = FALSE, title = "Hierarchical (GEO) Cluster")
-  sk_plot <- tmap_plot(clusters$sk, view = FALSE, title = "Skater Cluster")
+compare_plot <- function(clusters, palette) {
+  hc_plot <- tmap_plot(clusters$hc, palette, view = FALSE, title = "Hierarchical Cluster")
+  hg_plot <- tmap_plot(clusters$hg, palette, view = FALSE, title = "Hierarchical (GEO) Cluster")
+  sk_plot <- tmap_plot(clusters$sk, palette, view = FALSE, title = "Skater Cluster")
   tmap_arrange(hc_plot, hg_plot, sk_plot, ncol = 3)
 }
 
-tmap_plot <- function(cluster, view = TRUE, title = "Clustering Result") {
+tmap_plot <- function(cluster, palette, view = TRUE, title = "Clustering Result") {
   map <- tm_shape(cluster) +
     tm_fill("CLUSTER", 
-            palette = "Set3") +
+            palette = palette) +
     tm_layout(main.title = title,
               main.title.position = "center",
-              main.title.size = 1.2,
+              main.title.size = 1,
               legend.height = 0.45, 
               legend.width = 0.35,
               frame = TRUE) +
