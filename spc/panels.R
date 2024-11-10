@@ -55,7 +55,7 @@ cc_panel <- nav_panel("Cluster Configuration",
                           radioButtons( 
                             "spc_cc_rad_style", 
                             "Style", 
-                            choices = list("NB Clust" = 1, "Fviz" = 2),
+                            choices = list("Fviz" = 1, "NB Clust" = 2),
                             selected = 1
                           ),
                           uiOutput("spc_cc_sel_mtd"),
