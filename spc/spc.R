@@ -152,18 +152,19 @@ cc_func <- function(input, output) {
 cr_func <- function(input, output) {
   
   hm_result <- eventReactive(input$spc_cr_hm_btn, get_clust(input, output, 1))
-  output$spc_cr_hm <- renderPlotly(heatmap_plot(hm_result()$heatmap))
+  output$spc_cr_hm <- renderPlotly(heatmaply_plot(hm_result()$heatmap))
   
   hc_result <- eventReactive(input$spc_cr_hc_btn, get_clust(input, output, 1))
   output$spc_cr_hc <- renderTmap(tmap_plot(hc_result()$cluster))
-  output$spc_cr_hc_dd <- renderPlot(dendo_plot(hc_result()$dendo))
+  output$spc_cr_hc_dd <- renderPlot(subchart_plot(hc_result()$sub_plot))
   
   hg_result <- eventReactive(input$spc_cr_hg_btn, get_clust(input, output, 2))
   output$spc_cr_hg <- renderTmap(tmap_plot(hg_result()$cluster))
-  output$spc_cr_hg_dd <- renderPlot(dendo_plot(hg_result()$dendo))
+  output$spc_cr_hg_dd <- renderPlot(subchart_plot(hg_result()$sub_plot))
   
   sk_result <- eventReactive(input$spc_cr_sk_btn, get_clust(input, output, 3))
   output$spc_cr_sk <- renderTmap(tmap_plot(sk_result()$cluster))
+  output$spc_cr_sk_dd <- renderPlot(subchart_plot(sk_result()$sub_plot))
   
 }
 
@@ -172,35 +173,45 @@ get_clust <- function(input, output, type) {
   clust_sf <- proc_df(as.integer(input$spc_cr_sel_year), NULL, 2, TRUE)
   n_clust <- input$spc_cr_sel_nc
   
+  heatmap <- NULL
+  sel_style <- 1
+  
   if (type <= 2) {
     proxmat <- dist(clust_vars, method = 'euclidean')
     if (type == 1) {
       clust = hclust(proxmat, method = input$spc_cr_hc_sel_mtd)
+      sel_style <- input$spc_cr_hc_rad_sty
+      heatmap <- list(
+        clust_vars = clust_vars,
+        n_clust = n_clust,
+        sel_mtd = input$spc_cr_hm_sel_mtd
+      )
     } else { # Geo
       distmat <- as.dist(st_distance(clust_sf, clust_sf))
       clust <- hclustgeo(proxmat, distmat, alpha = input$spc_cr_hg_sel_alp)
+      sel_style <- input$spc_cr_hg_rad_sty
     }
     
     groups <- as.factor(cutree(clust, k=n_clust))
   } else {
-    nb <- map_nb(poly2nb(clust_sf))
+    set.seed(12345)
+    suppressWarnings(nb <- map_nb(poly2nb(clust_sf)))
     clust_vars.w <- nb2listw(nb, nbcosts(nb, clust_vars), style=input$spc_cr_sk_sel_sty)
     clust_vars.mst <- mstree(clust_vars.w)
     clust <- spdep::skater(edges = clust_vars.mst[,1:2], data = clust_vars, method = "euclidean", ncuts = (n_clust - 1))
+    sel_style <- input$spc_cr_sk_rad_sty
     
     groups <- as.factor(clust$groups)
   }
   
-  cluster <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
+  clust.sf <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
   return(list(
-    heatmap = list(
-      clust_vars = clust_vars,
-      n_clust = n_clust,
-      sel_mtd = input$spc_cr_hm_sel_mtd
-    ),
-    cluster = cluster,
-    dendo = list(
+    cluster = clust.sf,
+    heatmap = heatmap,
+    sub_plot = list(
+      sel_style = sel_style,
       clust = clust, 
+      clust.sf = clust.sf,
       n_clust = n_clust
     )
   ))
@@ -228,14 +239,60 @@ tmap_plot <- function(cluster, view = TRUE, title = "Clustering Result") {
   
 }
 
-dendo_plot <- function(dendo) {
-  plot(dendo$clust, cex = 0.6)
-  rect.hclust(clust, 
-              k = dendo$n_clust, 
-              border = 2:5)
+subchart_plot <- function(sub_plot) {
+  sel_style = sub_plot$sel_style
+  if (sel_style == 1) {
+    ggparcoord(data = sub_plot$clust.sf,
+               columns = c(4:10), 
+               scale = "globalminmax",
+               alphaLines = 0.2,
+               boxplot = TRUE, 
+               title = "Multiple Parallel Coordinates Plots of Crime type by Cluster") +
+      facet_grid(~ CLUSTER) + 
+      theme(axis.text.x = element_text(angle = 90))
+    
+  } else if (sel_style < 4) {
+    
+    cluster_prof <- sub_plot$clust.sf %>% 
+      st_drop_geometry() %>%
+      group_by(CLUSTER) %>%
+      summarise(mean_causing_injury = mean(causing_injury),
+                mean_murder = mean(murder),
+                mean_rape = mean(rape),
+                mean_robbery = mean(robbery),
+                mean_break_in = mean(break_in),
+                mean_theft_other = mean(theft_other),
+                mean_vehicle_theft = mean(vehicle_theft))
+    
+    if (sel_style == 2) {
+      ggplot(cluster_prof %>% pivot_longer(-CLUSTER, names_to = "metric", values_to = "value"), 
+             aes(x = CLUSTER, y = value, fill = CLUSTER)) +
+        geom_bar(stat = "identity", position = "dodge") +
+        facet_wrap(~ metric, scales = "free_y", ncol = 4) +  
+        scale_fill_brewer(palette = "Set3") +
+        ggtitle("Cluster Profile (Ward)") +
+        theme_minimal()
+    } else {
+      ggplot(cluster_prof %>% pivot_longer(cols = starts_with("mean_"), names_to = "variable", values_to = "value"), 
+             aes(x = variable, y = CLUSTER, fill = value)) +
+        geom_tile() +
+        geom_text(aes(label = value), color = "black", size = 1) +
+        scale_fill_gradient(low = "yellow", high = "red") +
+        labs(title = "Cluster Heatmap (H-Clust)",
+             x = "Crime Indicators",
+             y = "Clusters") +
+        theme_minimal()
+    }
+    
+  } else {
+    plot(sub_plot$clust, cex = 0.6)
+    rect.hclust(sub_plot$clust, 
+                k = sub_plot$n_clust, 
+                border = 2:5)
+  }
 }
 
-heatmap_plot <- function(heatmap) {
+heatmaply_plot <- function(heatmap) {
   heatmaply(normalize(data.matrix(heatmap$clust_vars)),
             Colv=NA,
             dist_method = "euclidean",
