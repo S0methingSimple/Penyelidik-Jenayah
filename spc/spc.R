@@ -124,8 +124,19 @@ cc_func <- function(input, output) {
       )
     } else {
       sel_mtd <- sel_mtd %||% "ward.D"
+      dev.off()
       res <- NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd)
-      res$console_output <- paste(capture.output(NbClust(clust_vars, distance = "euclidean", min.nc = input$spc_cc_sel_rng[1], max.nc = input$spc_cc_sel_rng[2], method = sel_mtd))[12:24], collapse = "<br>")
+      dev.off()
+      res$console_output <- paste(capture.output(
+                                      NbClust(
+                                        clust_vars, 
+                                        distance = "euclidean", 
+                                        min.nc = input$spc_cc_sel_rng[1], 
+                                        max.nc = input$spc_cc_sel_rng[2], 
+                                        method = sel_mtd), 
+                                      file = NULL, 
+                                      type = "output")[12:24], 
+                                  collapse = "<br>")
       res$sel_style = sel_style
     }
     
