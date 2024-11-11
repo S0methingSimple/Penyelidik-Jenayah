@@ -1,5 +1,5 @@
 pacman::p_load(shiny, sf, tmap, tidyverse, sfdep, shinydashboard, shinythemes, 
-               sf, st, tidyverse, raster, tmap, tmaptools, ggplot2, 
+               sf, st, tidyverse, raster, tmap, tmaptools, ggplot2, plotly,
                spatstat, sfdep, ClustGeo, ggpubr, cluster, factoextra, 
                NbClust, heatmaply, corrplot, psych, tidyverse, GGally)
 
@@ -77,7 +77,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
           ),
         ),
         mainPanel(
-          plotOutput("eda_choro_plot",
+          plotlyOutput("eda_choro_plot",
                      width = "95%",
                      height = 580)
         )
@@ -174,7 +174,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                       ),
         ),
         mainPanel(
-          plotOutput("state_comparison",
+          plotlyOutput("state_comparison",
                      width = "95%",
                      height = 580)
         )
@@ -206,7 +206,7 @@ eda_server <- function(input, output, session) {
   })
 
   # Choropleth Plot
-  output$eda_choro_plot <- renderPlot({
+  output$eda_choro_plot <- renderPlotly({
     # Filter data based on selections
     if (is.null(input$state_select)) {
       filtered_data <- eda_sf %>%
@@ -221,7 +221,7 @@ eda_server <- function(input, output, session) {
         filter(type %in% if (is.null(input$choro_type_select)) {types} else {input$choro_type_select})
     }
     
-    ggplot(filtered_data, aes(fill = get(input$crime_measure), geometry = geometry)) +
+    p <- ggplot(filtered_data, aes(fill = get(input$crime_measure), geometry = geometry)) +
       geom_sf() +
       scale_fill_distiller(palette = "Blues", direction = 1) +
       labs(title = "Crime Distribution",
@@ -231,6 +231,8 @@ eda_server <- function(input, output, session) {
             axis.text = element_blank(),
             axis.ticks = element_blank(),
             plot.title = element_text(hjust = 0.5))
+    ggplotly(p, tooltip = c("state", input$crime_measure))
+    
   })
   
   output$trend_plot <- renderPlotly({
@@ -275,13 +277,13 @@ eda_server <- function(input, output, session) {
   })
   
   # Render choropleth map
-  output$state_comparison <- renderPlot({
+  output$state_comparison <- renderPlotly({
     filtered_data <- eda_sf %>%
       filter(year %in% ifelse(input$comp_year == 0, unique(year), input$comp_year)) %>%
       filter(state %in% input$state_select) %>%
       filter(type %in% if (is.null(input$comp_type_select)) {types} else {input$comp_type_select})
     
-    ggplot(filtered_data, aes(fill = get(input$comp_measure), geometry = geometry)) +
+    p <- ggplot(filtered_data, aes(fill = get(input$comp_measure), geometry = geometry)) +
       geom_sf() +
       scale_fill_distiller(palette = "Blues", direction = 1) +
       labs(title = "Crime Distribution",
@@ -291,5 +293,7 @@ eda_server <- function(input, output, session) {
             axis.text = element_blank(),
             axis.ticks = element_blank(),
             plot.title = element_text(hjust = 0.5))
+    ggplotly(p, tooltip = c("state", input$comp_measure))
   })
+  
 }
