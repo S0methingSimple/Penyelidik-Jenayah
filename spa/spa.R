@@ -7,6 +7,7 @@ spa_crime_df_mys_grp <- read_rds("data/spa/rds/crime_df_mys_grp.rds")
 ############################ Shiny UI ############################ 
 
 spa_ui <- tabPanel("Spatial Autocorrelation",
+                   h1("Spatial Autocorrelation of Crimes"), 
                    navset_card_pill(
                      nav_panel("Global Measures",
                                sidebarLayout(
