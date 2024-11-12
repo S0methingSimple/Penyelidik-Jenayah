@@ -47,7 +47,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
           ),
           radioButtons(
             "crime_measure",
-            "Crime Measure",
+            "Select Crime Measure",
             choices = list(
               "Overall Crime Count" = "crimes",
               "Crime per Capita" = "crimes_pc"
@@ -58,18 +58,19 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
             "Select States",
             choices = states, # Will be updated in server
             selected = NULL,
+            multiple = TRUE,
             options = list(placeholder = 'Select states or leave empty for all')
             ),
           
           selectInput(
             "choro_category_select",
-            "Crime Category",
+            "Select Crime Category",
             choices = c("All", "assault", "property"),
             selected = "All"
           ),
           selectizeInput(
             "choro_type_select",
-            "Crime Type",
+            "Select Crime Type",
             choices = NULL,
             multiple = TRUE,
             selected = NULL,
@@ -77,7 +78,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
           ),
         ),
         mainPanel(
-          plotlyOutput("eda_choro_plot",
+          tmapOutput("eda_choro_plot",
                      width = "95%",
                      height = 580)
         )
@@ -102,7 +103,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
           ),
           
           # Metric selection
-          radioButtons("trend_metric", "Select Metric:",
+          radioButtons("trend_metric", "Select Metric",
                        choices = c("Total Crimes" = "crimes",
                                    "Crimes per Capita" = "crimes_pc"),
                        selected = "crimes"),
@@ -115,13 +116,13 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                          options = list(placeholder = 'Select states or leave empty for all')),
           
           # Category selection
-          selectInput("trend_category_select", "Crime Category",
+          selectInput("trend_category_select", "Select Crime Category",
                       choices = c("All", "assault", "property"),
                       selected = "All"),
           
           # Type selection
           selectizeInput("trend_type_select",
-                         "Crime Type",
+                         "Select Crime Type",
                          choices = NULL,
                          multiple = TRUE,
                          selected = NULL,
@@ -154,7 +155,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
           ),
           radioButtons(
             "comp_measure",
-            "Comparison Measure",
+            "Select Comparison Measure",
             choices = list(
               "Sum of Crime Count" = "crime_ratio_to_sum",
               "Mean Crime Count" = "crime_ratio_to_mean"
@@ -162,12 +163,11 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
           ),
           selectInput(
             "state_select",
-            "Select States",
+            "Select State",
             choices = states,
-            multiple = TRUE,
             selected = "JOHOR"
           ),
-          selectInput("comp_type_select", "Select Crime Type:",
+          selectInput("comp_type_select", "Select Crime Type",
                       choices = types,
                       selected = NULL,
                       multiple = TRUE
@@ -206,7 +206,7 @@ eda_server <- function(input, output, session) {
   })
 
   # Choropleth Plot
-  output$eda_choro_plot <- renderPlotly({
+  output$eda_choro_plot <- renderTmap({
     # Filter data based on selections
     if (is.null(input$state_select)) {
       filtered_data <- eda_sf %>%
@@ -221,17 +221,13 @@ eda_server <- function(input, output, session) {
         filter(type %in% if (is.null(input$choro_type_select)) {types} else {input$choro_type_select})
     }
     
-    p <- ggplot(filtered_data, aes(fill = get(input$crime_measure), geometry = geometry)) +
-      geom_sf() +
-      scale_fill_distiller(palette = "Blues", direction = 1) +
-      labs(title = "Crime Distribution",
-           fill = input$crime_measure) +
-      theme_minimal() +
-      theme(axis.title = element_blank(),
-            axis.text = element_blank(),
-            axis.ticks = element_blank(),
-            plot.title = element_text(hjust = 0.5))
-    ggplotly(p, tooltip = c("state", input$crime_measure))
+    tm_shape(filtered_data) +
+      tm_polygons(input$crime_measure,
+                  palette = "Blues",
+                  title = input$crime_measure,
+                  tooltip = c("state", input$crime_measure)) +
+      tm_layout(main.title = "Crime Distribution",
+                legend.position = c("right", "bottom"))
     
   })
   
