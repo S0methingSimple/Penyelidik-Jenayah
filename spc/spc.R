@@ -34,7 +34,7 @@ proc_df <- function(yr, states, norm, sf) {
   if (!sf) {
     rns <- spc_sf.fil$district
     spc_sf.fil <- spc_sf.fil %>%
-      select(-district, -state, -year) %>%
+      dplyr::select(-district, -state, -year) %>%
       st_drop_geometry() %>%
       rownames_to_column(var = "row_name") %>%
       mutate(row_name = rns) %>%
@@ -274,6 +274,7 @@ get_clust <- function(input, output, type) {
 }
 
 compare_plot <- function(clusters, palette) {
+  tmap_mode("plot")
   hc_plot <- tmap_plot(clusters$hc, palette, view = FALSE, title = "Hierarchical Cluster")
   hg_plot <- tmap_plot(clusters$hg, palette, view = FALSE, title = "Hierarchical (GEO) Cluster")
   sk_plot <- tmap_plot(clusters$sk, palette, view = FALSE, title = "Skater Cluster")
