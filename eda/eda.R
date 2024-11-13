@@ -161,6 +161,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                                        selected = NULL,
                                        multiple = TRUE
                            ),
+                           actionButton("comp_btn", "Update")
                          ),
                          mainPanel(
                            plotlyOutput("state_comparison",
@@ -284,7 +285,7 @@ eda_server <- function(input, output) {
   })
   
   # Render choropleth map
-  output$state_comparison <- renderPlotly({
+  comp_result <- eventReactive(input$comp_btn, {
     filtered_data <- eda_sf %>%
       filter(year %in% ifelse(input$comp_year == 0, unique(year), input$comp_year)) %>%
       filter(state %in% input$state_select) %>%
@@ -300,7 +301,18 @@ eda_server <- function(input, output) {
             axis.text = element_blank(),
             axis.ticks = element_blank(),
             plot.title = element_text(hjust = 0.5))
-    ggplotly(p, tooltip = c("state", input$comp_measure))
+    
+    
+    return(list(
+      p = p,
+      comp_measure = input$comp_measure
+    ))       
+  })
+  
+  output$state_comparison <- renderPlotly({
+    p <- comp_result()$p
+    comp_measure <- comp_result()$comp_measure
+    ggplotly(p, tooltip = c("state", comp_measure))
   })
   
 }
