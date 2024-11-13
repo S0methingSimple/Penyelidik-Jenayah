@@ -69,6 +69,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                              selected = "All"
                            ),
                            uiOutput("choro_type_select"),
+                           actionButton("choro_btn", "Update")
                          ),
                          mainPanel(
                            tmapOutput("eda_choro_plot",
@@ -207,8 +208,7 @@ eda_server <- function(input, output) {
   })
   
   # Choropleth Plot
-  output$eda_choro_plot <- renderTmap({
-    # Filter data based on selections
+  choro_result <- eventReactive(input$choro_btn, {
     if (is.null(input$state_select)) {
       filtered_data <- eda_sf %>%
         filter(year %in% ifelse(input$eda_sel_year == 0, unique(year), input$eda_sel_year)) %>%
@@ -222,11 +222,21 @@ eda_server <- function(input, output) {
         filter(type %in% if (is.null(input$choro_type_select)) {types} else {input$choro_type_select})
     }
     
+    return(list(
+      data = filtered_data,
+      measure = input$crime_measure
+    ))
+  })
+  output$eda_choro_plot <- renderTmap({
+    filtered_data <- choro_result()$data
+    crime_measure <- choro_result()$measure
+    
+    # Filter data based on selections
     tm_shape(filtered_data) +
-      tm_polygons(input$crime_measure,
+      tm_polygons(crime_measure,
                   palette = "Blues",
-                  title = input$crime_measure,
-                  tooltip = c("state", input$crime_measure)) +
+                  title = crime_measure,
+                  tooltip = c("state", crime_measure)) +
       tm_layout(main.title = "Crime Distribution",
                 legend.position = c("right", "bottom"))
     
