@@ -13,11 +13,11 @@ source("./spc/spc.R")
 #========================# 
 
 ui <- navbarPage(
-  title = "Penyelidik Jenayah",
+  title = "PENYELIDIK JENAYAH 👮🏽👮🏽‍♂👮🏽‍♀️️️",
   fluid = TRUE,
   theme=shinytheme("darkly"),
   id = "navbarID",
-  tabPanel("Home",
+  tabPanel("Overview",
      sidebarLayout(
        sidebarPanel(
          h3("Side Bar is here")

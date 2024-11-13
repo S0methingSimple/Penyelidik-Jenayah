@@ -124,19 +124,22 @@ cc_func <- function(input, output) {
       )
     } else {
       sel_mtd <- sel_mtd %||% "ward.D"
-      dev.off()
+      min_rng <- input$spc_cc_sel_rng[1]
+      max_rng <- input$spc_cc_sel_rng[2]
+      #dev.off()
       res <- NbClust(clust_vars, distance = "euclidean", min.nc = 5, max.nc = 10, method = sel_mtd)
-      dev.off()
-      res$console_output <- paste(capture.output(
-                                      NbClust(
-                                        clust_vars, 
-                                        distance = "euclidean", 
-                                        min.nc = input$spc_cc_sel_rng[1], 
-                                        max.nc = input$spc_cc_sel_rng[2], 
-                                        method = sel_mtd), 
-                                      file = NULL, 
-                                      type = "output")[12:24], 
-                                  collapse = "<br>")
+      res$console_output <- paste(sprintf("<h2>Cluster Indicies Vote (K:%d-%d)</h2>", min_rng, max_rng),
+                                  paste(capture.output(
+                                    NbClust(
+                                      clust_vars, 
+                                      distance = "euclidean", 
+                                      min.nc = min_rng, 
+                                      max.nc = max_rng, 
+                                      method = sel_mtd), 
+                                    file = NULL, 
+                                    type = "output")[11:24], 
+                                    collapse = "<br>")
+                                  )
       res$sel_style = sel_style
     }
     
@@ -308,7 +311,7 @@ subchart_plot <- function(sub_plot) {
                scale = "globalminmax",
                alphaLines = 0.2,
                boxplot = TRUE, 
-               title = "Multiple Parallel Coordinates Plots of Crime type by Cluster") +
+               title = "Parallel Coordinates of Crime type by Cluster") +
       facet_grid(~ CLUSTER) + 
       theme(axis.text.x = element_text(angle = 90))
     
@@ -330,8 +333,7 @@ subchart_plot <- function(sub_plot) {
              aes(x = CLUSTER, y = value, fill = CLUSTER)) +
         geom_bar(stat = "identity", position = "dodge") +
         facet_wrap(~ metric, scales = "free_y", ncol = 4) +  
-        scale_fill_brewer(palette = "Set3") +
-        ggtitle("Cluster Profile (Ward)") +
+        ggtitle("Crime type Cluster Profile") +
         theme_minimal()
     } else {
       ggplot(cluster_prof %>% pivot_longer(cols = starts_with("mean_"), names_to = "variable", values_to = "value"), 
@@ -339,7 +341,7 @@ subchart_plot <- function(sub_plot) {
         geom_tile() +
         geom_text(aes(label = value), color = "black", size = 1) +
         scale_fill_gradient(low = "yellow", high = "red") +
-        labs(title = "Cluster Heatmap (H-Clust)",
+        labs(title = "Crime type Cluster Heatmap",
              x = "Crime Indicators",
              y = "Clusters") +
         theme_minimal()
