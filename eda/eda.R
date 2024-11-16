@@ -4,7 +4,6 @@ pacman::p_load(shiny, sf, tmap, tidyverse, sfdep, shinydashboard, shinythemes,
                NbClust, heatmaply, corrplot, psych, tidyverse, GGally)
 
 eda_sf <- read_rds("data/eda/eda.rds")
-eda_sf.all <- eda_sf %>% filter(year == 0)
 states <- unique(eda_sf$state)
 types <- unique(eda_sf$type)
 category <- unique(eda_sf$category)
@@ -18,7 +17,7 @@ state_lvl <- eda_sf %>%
 
 state_lvl <- st_drop_geometry(state_lvl)
 
-eda_sf <- eda_sf %>%
+comp_eda_sf <- eda_sf %>%
   left_join(state_lvl, by = c("state", "year", "category", "type")) %>%
   mutate(
     crime_ratio_to_mean = crimes/m_crime_state,
@@ -243,7 +242,7 @@ eda_server <- function(input, output) {
     
   })
   
-  output$trend_plot <- renderPlotly({
+  output$trend_plot1 <- renderPlotly({
     base_data <- eda_sf %>%
       st_drop_geometry() %>%
       dplyr::select(state, year, category, type, crimes, crimes_pc)
@@ -284,24 +283,109 @@ eda_server <- function(input, output) {
       layout(hovermode = "x unified")
   })
   
-  # Render choropleth map
+  output$trend_plot <- renderPlotly({
+    base_data <- eda_sf %>%
+      st_drop_geometry() %>%
+      dplyr::select(state, year, category, type, crimes, crimes_pc)
+    
+    if (is.null(input$trend_state_select)) {
+      filtered_data <- base_data %>%
+        filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
+        filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
+        filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
+    } else {
+      filtered_data <- base_data %>%
+        filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
+        filter(state %in% input$trend_state_select) %>%
+        filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
+        filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
+    }
+    
+    # Calculate summary statistics for each state-year combination
+    summarized_data <- filtered_data %>%
+      group_by(state, year) %>%
+      summarise(
+        total_crimes = sum(!!sym(input$trend_metric), na.rm = TRUE),
+        .groups = 'drop'
+      )
+    
+    # Create the base plot with improved aesthetics
+    p <- ggplot(summarized_data, 
+                aes(x = year, 
+                    y = total_crimes, 
+                    color = state, 
+                    group = state,
+                    text = paste("State:", state,
+                                 "<br>Year:", year,
+                                 "<br>Value:", round(total_crimes, 2)))) +
+      geom_line(size = 1.2) +
+      geom_point(size = 4, shape = 21, fill = "white") +
+      scale_x_continuous(breaks = unique(summarized_data$year)) +
+      scale_y_continuous(labels = scales::comma_format()) +
+      scale_color_viridis_d(option = "turbo") +  # Better color palette
+      labs(title = paste("Crime Trends:", 
+                         ifelse(input$trend_category_select == "All", 
+                                "All Categories", 
+                                input$trend_category_select)),
+           subtitle = paste("Showing", ifelse(input$trend_metric == "crimes", 
+                                              "Total Crimes", 
+                                              "Crimes per Capita")),
+           x = "Year",
+           y = ifelse(input$trend_metric == "crimes", 
+                      "Total Crimes", 
+                      "Crimes per Capita"),
+           color = "State") +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 12, hjust = 0.5),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.text = element_text(size = 10),
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.position = "right",
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "gray90"),
+        plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
+      )
+    
+    # Convert to plotly with improved tooltip and layout
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        hoverlabel = list(bgcolor = "white"),
+        showlegend = TRUE,
+        legend = list(
+          orientation = "v",
+          xanchor = "left",
+          x = 1.02,
+          y = 0.9
+        ),
+        margin = list(r = 100),  # Add margin for legend
+        hovermode = "x unified"
+      ) %>%
+      config(displayModeBar = FALSE)  # Remove the plotly toolbar
+  })
+  
   comp_result <- eventReactive(input$comp_btn, {
-    filtered_data <- eda_sf %>%
+    # Keep geometry column by not using st_drop_geometry earlier
+    filtered_data <- comp_eda_sf %>%
       filter(year %in% ifelse(input$comp_year == 0, unique(year), input$comp_year)) %>%
       filter(state %in% input$state_select) %>%
       filter(type %in% if (is.null(input$comp_type_select)) {types} else {input$comp_type_select})
     
-    p <- ggplot(filtered_data, aes(fill = get(input$comp_measure), geometry = geometry)) +
-      geom_sf() +
+    # Use geom_sf() for spatial plotting
+    p <- ggplot(filtered_data) +
+      geom_sf(aes(fill = !!sym(input$comp_measure))) +  # Use !!sym() to properly reference the column
       scale_fill_distiller(palette = "Blues", direction = 1) +
       labs(title = "Crime Distribution",
-           fill = input$comp_measure) +
+           fill = ifelse(input$comp_measure == "crime_ratio_to_sum", 
+                         "Ratio to State Sum", 
+                         "Ratio to State Mean")) +
       theme_minimal() +
       theme(axis.title = element_blank(),
             axis.text = element_blank(),
             axis.ticks = element_blank(),
             plot.title = element_text(hjust = 0.5))
-    
     
     return(list(
       p = p,
@@ -310,9 +394,13 @@ eda_server <- function(input, output) {
   })
   
   output$state_comparison <- renderPlotly({
-    p <- comp_result()$p
-    comp_measure <- comp_result()$comp_measure
-    ggplotly(p, tooltip = c("state", comp_measure))
+    result <- comp_result()
+    p <- result$p
+    comp_measure <- result$comp_measure
+    
+    # Convert to plotly while preserving spatial information
+    ggplotly(p, tooltip = c("state", comp_measure)) %>%
+      style(hoveron = "fills")  # Ensure hover works on filled regions
   })
   
 }
