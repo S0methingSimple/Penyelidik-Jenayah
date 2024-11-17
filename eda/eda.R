@@ -4,7 +4,7 @@ pacman::p_load(shiny, sf, tmap, tidyverse, sfdep, shinydashboard, shinythemes,
                NbClust, heatmaply, corrplot, psych, tidyverse, GGally)
 
 eda_sf <- read_rds("data/eda/eda.rds")
-eda_sf <- read_rds("data/eda/comp_eda.rds")
+comp_eda_sf <- read_rds("data/eda/comp_eda.rds")
 states <- unique(eda_sf$state)
 types <- unique(eda_sf$type)
 category <- unique(eda_sf$category)
@@ -56,7 +56,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            actionButton("choro_btn", "Update")
                          ),
                          mainPanel(
-                           tmapOutput("eda_choro_plot",
+                           plotOutput("eda_choro_plot",
                                       width = "95%",
                                       height = 580)
                          )
@@ -212,7 +212,8 @@ eda_server <- function(input, output) {
       measure = input$crime_measure
     ))
   })
-  output$eda_choro_plot <- renderTmap({
+  output$eda_choro_plot <- renderPlot({
+    tmap_mode("plot")
     filtered_data <- choro_result()$data
     crime_measure <- choro_result()$measure
     
@@ -220,8 +221,7 @@ eda_server <- function(input, output) {
     tm_shape(filtered_data) +
       tm_polygons(crime_measure,
                   palette = "Blues",
-                  title = crime_measure,
-                  tooltip = c("state", crime_measure)) +
+                  title = crime_measure) +
       tm_layout(main.title = "Crime Distribution",
                 legend.position = c("right", "bottom"))
     
