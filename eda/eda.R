@@ -53,7 +53,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                              )
                            ),
                            selectizeInput(
-                             "state_select",
+                             "eda_state_select",
                              "Select States",
                              choices = states, # Will be updated in server
                              selected = NULL,
@@ -209,7 +209,7 @@ eda_server <- function(input, output) {
   
   # Choropleth Plot
   choro_result <- eventReactive(input$choro_btn, {
-    if (is.null(input$state_select)) {
+    if (is.null(input$eda_state_select)) {
       filtered_data <- eda_sf %>%
         filter(year %in% ifelse(input$eda_sel_year == 0, unique(year), input$eda_sel_year)) %>%
         filter(category %in% ifelse(input$choro_category_select == "All", unique(category), input$choro_category_select)) %>%
@@ -217,7 +217,7 @@ eda_server <- function(input, output) {
     } else {
       filtered_data <- eda_sf %>%
         filter(year %in% ifelse(input$eda_sel_year == 0, unique(year), input$eda_sel_year)) %>%
-        filter(state %in% if (is.null(input$state_select)) {states} else {input$state_select}) %>%
+        filter(state %in% if (is.null(input$eda_state_select)) {states} else {input$eda_state_select}) %>%
         filter(category %in% ifelse(input$choro_category_select == "All", unique(category), input$choro_category_select)) %>%
         filter(type %in% if (is.null(input$choro_type_select)) {types} else {input$choro_type_select})
     }
