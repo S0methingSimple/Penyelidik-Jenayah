@@ -60,7 +60,9 @@ cc_panel <- nav_panel("Cluster Configuration",
                         mainPanel(
                           htmlOutput("spc_summary"),
                           hr(),
-                          plotOutput("spc_configOut")
+                          plotOutput("spc_configOut",
+                                     width = "95%",
+                                     height = 580)
                         )
                       )
 )
@@ -84,7 +86,9 @@ cr_panel <- nav_panel("Cluster Result",
                     actionButton("spc_cr_hm_btn", "Update")
                   ),
                   mainPanel(
-                    plotlyOutput("spc_cr_hm")
+                    plotlyOutput("spc_cr_hm",
+                                 width = "95%",
+                                 height = 700)
                   )
                 )
       ),
@@ -140,7 +144,9 @@ cr_panel <- nav_panel("Cluster Result",
                     actionButton("spc_crc_btn", "Update")
                   ),
                   mainPanel(
-                    plotOutput("spc_crc")
+                    plotOutput("spc_crc",
+                               width = "95%",
+                               height = 550)
                   )
                 ) 
       )
