@@ -4,25 +4,10 @@ pacman::p_load(shiny, sf, tmap, tidyverse, sfdep, shinydashboard, shinythemes,
                NbClust, heatmaply, corrplot, psych, tidyverse, GGally)
 
 eda_sf <- read_rds("data/eda/eda.rds")
+eda_sf <- read_rds("data/eda/comp_eda.rds")
 states <- unique(eda_sf$state)
 types <- unique(eda_sf$type)
 category <- unique(eda_sf$category)
-state_lvl <- eda_sf %>% 
-  group_by(state, year, category, type) %>%
-  summarise(
-    m_crime_state = mean(crimes, na.rm = TRUE),
-    s_crime_state = sum(crimes, na.rm = TRUE),
-    .groups = "drop"  # This explicitly drops the grouping
-  )
-
-state_lvl <- st_drop_geometry(state_lvl)
-
-comp_eda_sf <- eda_sf %>%
-  left_join(state_lvl, by = c("state", "year", "category", "type")) %>%
-  mutate(
-    crime_ratio_to_mean = crimes/m_crime_state,
-    crime_ratio_to_sum = crimes/s_crime_state
-  )
 
 eda_ui <- tabPanel("Exploratory Data Analysis",
                    h1("Visualising Distributions of Crime"), 
