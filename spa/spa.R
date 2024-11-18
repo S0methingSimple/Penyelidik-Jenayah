@@ -107,7 +107,9 @@ spa_ui <- tabPanel("Spatial Autocorrelation",
                  actionButton("MoranUpdate", "Update Plot")
                ),
                mainPanel(
-                 tmapOutput("LocalMoranMap")
+                 tmapOutput("LocalMoranMap",
+                            width = "95%",
+                            height = 580)
                )
              )
    ),
@@ -137,7 +139,9 @@ spa_ui <- tabPanel("Spatial Autocorrelation",
                  actionButton("GiStarUpdate", "Update Plot")
                ),
                mainPanel(
-                 tmapOutput("GiStarmap")
+                 tmapOutput("GiStarmap",
+                            width = "95%",
+                            height = 580)
                )
              )
    )
