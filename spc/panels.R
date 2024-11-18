@@ -2,6 +2,7 @@ ve_panel <- nav_panel("Variable Exploration",
                       sidebarLayout(
                         sidebarPanel(
                           helpText("ℹ️  This sections visualizes the distribution of the variables in the dataset, the dashboard provides the options for filtering, data standardization and viewing of the correlation between variables."),
+                          hr(),
                           selectInput("spc_sel_year", "Year", choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022), selected = 1),
                           selectInput("spc_sel_states", "State",
                             choices = u_states,
@@ -41,6 +42,7 @@ cc_panel <- nav_panel("Cluster Configuration",
                       sidebarLayout(
                         sidebarPanel(
                           helpText("ℹ️  This sections allows the exploration of No. of clusters configuration for subsequent clustering, the dashboard proposes the best clustering scheme from the different results obtained from the clustering techniques."),
+                          hr(),
                           selectInput(
                             "spc_cc_sel_year",
                             "Year",
@@ -69,7 +71,7 @@ cc_panel <- nav_panel("Cluster Configuration",
 
 cr_panel <- nav_panel("Cluster Result", 
     wellPanel(
-      h4("Cluster Parameters"),
+      h4("Customize Cluster Parameters"),
       hr(),
       fluidRow(
         column(width = 3, selectInput("spc_cr_sel_year", "Year", choices = list("All" = 0, "2019" = 2019, "2020" = 2020, "2021" = 2021, "2022" = 2022), selected = 1)),
@@ -82,6 +84,7 @@ cr_panel <- nav_panel("Cluster Result",
                 sidebarLayout(
                   sidebarPanel(
                     helpText("ℹ️  This sections provides an overview of the clusters via interactive heatmap of the results supported by simple hierarchical clustering"),
+                    hr(),
                     selectInput("spc_cr_hm_sel_mtd", "Method", choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"), selected = 1),
                     actionButton("spc_cr_hm_btn", "Update")
                   ),
@@ -96,8 +99,9 @@ cr_panel <- nav_panel("Cluster Result",
                  sidebarLayout(
                    sidebarPanel(
                      helpText("ℹ️  This sections enables in-depth analysis of cluster performed with Hierarchical clustering, supported with an interactive cluster plot and supporting charts"),
+                     hr(),
                      selectInput("spc_cr_hc_sel_mtd", "Method", choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"), selected = 1),
-                     radioButtons("spc_cr_hc_rad_sty", "Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3, "Dendogram" = 4), selected = 1),
+                     radioButtons("spc_cr_hc_rad_sty", "Subplot Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3, "Dendogram" = 4), selected = 1),
                      actionButton("spc_cr_hc_btn", "Update")
                    ),
                    mainPanel(
@@ -110,8 +114,9 @@ cr_panel <- nav_panel("Cluster Result",
                 sidebarLayout(
                   sidebarPanel(
                     helpText("ℹ️  This sections enables in-depth analysis of cluster performed with Spatially Constrained Hierarchical clustering, supported with an interactive cluster plot and supporting charts"),
+                    hr(),
                     sliderInput("spc_cr_hg_sel_alp", "Choice Alpha", min = 0.0, max = 1.0, value = 0.5),
-                    radioButtons("spc_cr_hg_rad_sty", "Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3, "Dendogram" = 4), selected = 1),
+                    radioButtons("spc_cr_hg_rad_sty", "Subplot Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3, "Dendogram" = 4), selected = 1),
                     actionButton("spc_cr_hg_btn", "Update")
                   ),
                   mainPanel(
@@ -124,8 +129,9 @@ cr_panel <- nav_panel("Cluster Result",
                 sidebarLayout(
                   sidebarPanel(
                     helpText("ℹ️  This sections enables in-depth analysis of cluster performed with Skater clustering, supported with an interactive cluster plot and supporting charts"),
+                    hr(),
                     selectInput("spc_cr_sk_sel_sty", "Style", choices = c("W", "B", "C", "U", "S"), selected = 1),
-                    radioButtons("spc_cr_sk_rad_sty", "Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3), selected = 1),
+                    radioButtons("spc_cr_sk_rad_sty", "Subplot Style", choices = list("Parallel Coordinates" = 1, "Cluster Profile" = 2, "Heatmap" = 3), selected = 1),
                     actionButton("spc_cr_sk_btn", "Update")
                   ),
                   mainPanel(
@@ -138,6 +144,7 @@ cr_panel <- nav_panel("Cluster Result",
                 sidebarLayout(
                   sidebarPanel(
                     helpText("ℹ️  This sections visualizes and aids in comparison of the 3 clustering techniques, with technique specific configuration options available"),
+                    hr(),
                     selectInput("spc_crc_hc_sel_mtd", "HClust: Method", choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"), selected = 1),
                     sliderInput("spc_crc_hg_sel_alp", "ClustG: Alpha", min = 0.0, max = 1.0, value = 0.5),
                     selectInput("spc_crc_sk_sel_sty", "Skater: Style", choices = c("W", "B", "C", "U", "S"), selected = 1),

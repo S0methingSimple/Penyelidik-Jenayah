@@ -33,7 +33,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            radioButtons(
                              "crime_measure",
-                             "Select Crime Measure",
+                             "Crime Measure",
                              choices = list(
                                "Overall Crime Count" = "crimes",
                                "Crime per Capita" = "crimes_pc"
@@ -41,7 +41,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            selectizeInput(
                              "eda_state_select",
-                             "Select States",
+                             "States",
                              choices = states, # Will be updated in server
                              selected = NULL,
                              multiple = TRUE,
@@ -50,7 +50,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            
                            selectInput(
                              "choro_category_select",
-                             "Select Crime Category",
+                             "Crime Category",
                              choices = c("All", "assault", "property"),
                              selected = "All"
                            ),
@@ -83,20 +83,20 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            
                            # Metric selection
-                           radioButtons("trend_metric", "Select Metric",
+                           radioButtons("trend_metric", "Metric",
                                         choices = c("Total Crimes" = "crimes",
                                                     "Crimes per Capita" = "crimes_pc"),
                                         selected = "crimes"),
                            
                            # State selection
-                           selectizeInput("trend_state_select", "Select States",
+                           selectizeInput("trend_state_select", "States",
                                           choices = states,
                                           multiple = TRUE,
                                           selected = NULL,
                                           options = list(placeholder = 'Select states or leave empty for all')),
                            
                            # Category selection
-                           selectInput("trend_category_select", "Select Crime Category",
+                           selectInput("trend_category_select", "Crime Category",
                                        choices = c("All", "assault", "property"),
                                        selected = "All"),
                            
@@ -130,7 +130,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            radioButtons(
                              "comp_measure",
-                             "Select Comparison Measure",
+                             "Comparison Measure",
                              choices = list(
                                "Sum of Crime Count" = "crime_ratio_to_sum",
                                "Mean Crime Count" = "crime_ratio_to_mean"
@@ -138,11 +138,11 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            selectInput(
                              "state_select",
-                             "Select State",
+                             "State",
                              choices = states,
                              selected = "JOHOR"
                            ),
-                           selectInput("comp_type_select", "Select Crime Type",
+                           selectInput("comp_type_select", "Crime Type",
                                        choices = types,
                                        selected = NULL,
                                        multiple = TRUE
@@ -170,7 +170,7 @@ eda_server <- function(input, output) {
     
     selectizeInput(
         "choro_type_select",
-        "Select Crime Type",
+        "Crime Type",
         choices = types,
         multiple = TRUE,
         selected = NULL,
@@ -186,7 +186,7 @@ eda_server <- function(input, output) {
     }
     
     selectizeInput("trend_type_select",
-                   "Select Crime Type",
+                   "Crime Type",
                    choices = types,
                    multiple = TRUE,
                    selected = NULL,

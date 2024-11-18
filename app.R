@@ -28,7 +28,7 @@ ui <- navbarPage(
      tags$ul("Exploratory Data Analysis (EDA): Visualize the spatial and temporal trends of crime in Malaysia."),
      tags$ul("Spatial Autocorrelation (SPA): Explore the spatial dependency of crime incidents across different regions."),
      tags$ul("Spatial Clustering (SPC): Identify clusters of similar crime patterns and understand their spatial distribution."),
-     img(src = "smu-logo.jpeg"),
+     #img(src = "smu-logo.jpeg"),
   ),
   eda_ui,
   spa_ui,
