@@ -5,8 +5,10 @@ pacman::p_load(shiny, sf, tmap, tidyverse, sfdep, shinydashboard, shinythemes,
 
 eda_sf <- read_rds("data/eda/eda.rds")
 comp_eda_sf <- read_rds("data/eda/comp_eda.rds")
-states <- unique(eda_sf$state)
-types <- unique(eda_sf$type)
+piv_eda_sf <- read_rds("data/eda/piv_eda.rds")
+piv_pc_eda_sf <- read_rds("data/eda/piv_pc_eda.rds")
+states <- unique(piv_eda_sf$state)
+types <- c("causing_injury", "murder", "rape", "robbery", "break_in", "theft_other", "vehicle_theft" )
 category <- unique(eda_sf$category)
 
 eda_ui <- tabPanel("Exploratory Data Analysis",
@@ -31,7 +33,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            radioButtons(
                              "crime_measure",
-                             "Select Crime Measure",
+                             "Crime Measure",
                              choices = list(
                                "Overall Crime Count" = "crimes",
                                "Crime per Capita" = "crimes_pc"
@@ -39,7 +41,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            selectizeInput(
                              "eda_state_select",
-                             "Select States",
+                             "States",
                              choices = states, # Will be updated in server
                              selected = NULL,
                              multiple = TRUE,
@@ -48,7 +50,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            
                            selectInput(
                              "choro_category_select",
-                             "Select Crime Category",
+                             "Crime Category",
                              choices = c("All", "assault", "property"),
                              selected = "All"
                            ),
@@ -56,7 +58,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            actionButton("choro_btn", "Update")
                          ),
                          mainPanel(
-                           plotOutput("eda_choro_plot",
+                           tmapOutput("eda_choro_plot",
                                       width = "95%",
                                       height = 580)
                          )
@@ -81,20 +83,20 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            
                            # Metric selection
-                           radioButtons("trend_metric", "Select Metric",
+                           radioButtons("trend_metric", "Metric",
                                         choices = c("Total Crimes" = "crimes",
                                                     "Crimes per Capita" = "crimes_pc"),
                                         selected = "crimes"),
                            
                            # State selection
-                           selectizeInput("trend_state_select", "Select States",
+                           selectizeInput("trend_state_select", "States",
                                           choices = states,
                                           multiple = TRUE,
                                           selected = NULL,
                                           options = list(placeholder = 'Select states or leave empty for all')),
                            
                            # Category selection
-                           selectInput("trend_category_select", "Select Crime Category",
+                           selectInput("trend_category_select", "Crime Category",
                                        choices = c("All", "assault", "property"),
                                        selected = "All"),
                            
@@ -128,7 +130,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            radioButtons(
                              "comp_measure",
-                             "Select Comparison Measure",
+                             "Comparison Measure",
                              choices = list(
                                "Sum of Crime Count" = "crime_ratio_to_sum",
                                "Mean Crime Count" = "crime_ratio_to_mean"
@@ -136,11 +138,11 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                            ),
                            selectInput(
                              "state_select",
-                             "Select State",
+                             "State",
                              choices = states,
                              selected = "JOHOR"
                            ),
-                           selectInput("comp_type_select", "Select Crime Type",
+                           selectInput("comp_type_select", "Crime Type",
                                        choices = types,
                                        selected = NULL,
                                        multiple = TRUE
@@ -168,7 +170,7 @@ eda_server <- function(input, output) {
     
     selectizeInput(
         "choro_type_select",
-        "Select Crime Type",
+        "Crime Type",
         choices = types,
         multiple = TRUE,
         selected = NULL,
@@ -184,7 +186,7 @@ eda_server <- function(input, output) {
     }
     
     selectizeInput("trend_type_select",
-                   "Select Crime Type",
+                   "Crime Type",
                    choices = types,
                    multiple = TRUE,
                    selected = NULL,
@@ -194,32 +196,35 @@ eda_server <- function(input, output) {
   
   # Choropleth Plot
   choro_result <- eventReactive(input$choro_btn, {
+    measure = input$crime_measure
+    sel_sf <- if (measure == "crimes") {piv_eda_sf} else {piv_pc_eda_sf}
+    sel_types <- if (is.null(input$choro_type_select)) {types} else {input$choro_type_select}
     if (is.null(input$eda_state_select)) {
-      filtered_data <- eda_sf %>%
-        filter(year %in% ifelse(input$eda_sel_year == 0, unique(year), input$eda_sel_year)) %>%
-        filter(category %in% ifelse(input$choro_category_select == "All", unique(category), input$choro_category_select)) %>%
-        filter(type %in% if (is.null(input$choro_type_select)) {types} else {input$choro_type_select})
+      filtered_data <- sel_sf %>%
+        mutate(crimes = rowSums(st_drop_geometry(sel_sf)[, sel_types], na.rm = TRUE)) %>%
+        dplyr::select(-all_of(types)) %>%
+        filter(year %in% ifelse(input$eda_sel_year == 0, unique(year), input$eda_sel_year))
     } else {
-      filtered_data <- eda_sf %>%
+      filtered_data <- sel_sf %>%
+        mutate(crimes = rowSums(st_drop_geometry(sel_sf)[, sel_types], na.rm = TRUE)) %>%
+        dplyr::select(-all_of(types)) %>%
         filter(year %in% ifelse(input$eda_sel_year == 0, unique(year), input$eda_sel_year)) %>%
-        filter(state %in% if (is.null(input$eda_state_select)) {states} else {input$eda_state_select}) %>%
-        filter(category %in% ifelse(input$choro_category_select == "All", unique(category), input$choro_category_select)) %>%
-        filter(type %in% if (is.null(input$choro_type_select)) {types} else {input$choro_type_select})
+        filter(state %in% if (is.null(input$eda_state_select)) {states} else {input$eda_state_select})
     }
     
     return(list(
       data = filtered_data,
-      measure = input$crime_measure
+      measure = measure
     ))
   })
-  output$eda_choro_plot <- renderPlot({
-    tmap_mode("plot")
+  output$eda_choro_plot <- renderTmap({
+    #tmap_mode("plot")
     filtered_data <- choro_result()$data
     crime_measure <- choro_result()$measure
     
     # Filter data based on selections
     tm_shape(filtered_data) +
-      tm_polygons(crime_measure,
+      tm_polygons("crimes",
                   palette = "Blues",
                   title = crime_measure) +
       tm_layout(main.title = "Crime Distribution",
