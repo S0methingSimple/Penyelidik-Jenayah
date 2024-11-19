@@ -192,67 +192,8 @@ eda_server <- function(input, output) {
       
   })
   
-  # Create a helper function for common filtering operations
-  filter_crime_data <- function(data, 
-                                selected_year = 0,
-                                selected_states = NULL,
-                                selected_category = "All",
-                                selected_types = NULL) {
-    
-    # Start with base data
-    filtered <- data
-    
-    # Apply year filter efficiently
-    if (selected_year != 0) {
-      filtered <- filtered[filtered$year == selected_year, ]
-    }
-    
-    # Apply state filter if states are selected
-    if (!is.null(selected_states) && length(selected_states) > 0) {
-      filtered <- filtered[filtered$state %in% selected_states, ]
-    }
-    
-    # Apply category filter efficiently
-    if (selected_category != "All") {
-      filtered <- filtered[filtered$category == selected_category, ]
-    }
-    
-    # Apply type filter efficiently
-    if (!is.null(selected_types) && length(selected_types) > 0) {
-      filtered <- filtered[filtered$type %in% selected_types, ]
-    }
-    
-    return(filtered)
-  }
-  
-  # Create a specialized function for trend data that includes summarization
-  filter_and_summarize_trend_data <- function(data, 
-                                              selected_year = 0,
-                                              selected_states = NULL,
-                                              selected_category = "All",
-                                              selected_types = NULL,
-                                              metric = "crimes") {
-    
-    # First apply common filters
-    filtered <- filter_crime_data(data, 
-                                  selected_year,
-                                  selected_states,
-                                  selected_category,
-                                  selected_types)
-    
-    # Summarize the filtered data
-    summarized <- filtered %>%
-      group_by(state, year) %>%
-      summarise(
-        total_crimes = sum(!!sym(metric), na.rm = TRUE),
-        .groups = 'drop'
-      )
-    
-    return(summarized)
-  }
-  
   # Choropleth Plot
-  choro_result1 <- eventReactive(input$choro_btn, {
+  choro_result <- eventReactive(input$choro_btn, {
     if (is.null(input$eda_state_select)) {
       filtered_data <- eda_sf %>%
         filter(year %in% ifelse(input$eda_sel_year == 0, unique(year), input$eda_sel_year)) %>%
@@ -271,22 +212,6 @@ eda_server <- function(input, output) {
       measure = input$crime_measure
     ))
   })
-  
-  choro_result <- eventReactive(input$choro_btn, {
-    filtered_data <- filter_crime_data(
-      data = eda_sf,
-      selected_year = input$eda_sel_year,
-      selected_states = input$eda_state_select,
-      selected_category = input$choro_category_select,
-      selected_types = input$choro_type_select
-    )
-    
-    return(list(
-      data = filtered_data,
-      measure = input$crime_measure
-    ))
-  })
-  
   output$eda_choro_plot <- renderPlot({
     tmap_mode("plot")
     filtered_data <- choro_result()$data
@@ -348,27 +273,19 @@ eda_server <- function(input, output) {
       st_drop_geometry() %>%
       dplyr::select(state, year, category, type, crimes, crimes_pc)
     
-    #if (is.null(input$trend_state_select)) {
-    #  filtered_data <- base_data %>%
-    #    filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
-    #    filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
-    #    filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
-    #} else {
-    #  filtered_data <- base_data %>%
-    #    filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
-    #    filter(state %in% input$trend_state_select) %>%
-    #    filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
-    #    filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
-    #}
+    if (is.null(input$trend_state_select)) {
+      filtered_data <- base_data %>%
+        filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
+        filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
+        filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
+    } else {
+      filtered_data <- base_data %>%
+        filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
+        filter(state %in% input$trend_state_select) %>%
+        filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
+        filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
+    }
     
-    summarized_data <- filter_and_summarize_trend_data(
-      data = base_data,
-      selected_year = input$trend_sel_year,
-      selected_states = input$trend_state_select,
-      selected_category = input$trend_category_select,
-      selected_types = input$trend_type_select,
-      metric = input$trend_metric
-    )
     # Calculate summary statistics for each state-year combination
     summarized_data <- filtered_data %>%
       group_by(state, year) %>%
@@ -436,17 +353,11 @@ eda_server <- function(input, output) {
   
   comp_result <- eventReactive(input$comp_btn, {
     # Keep geometry column by not using st_drop_geometry earlier
-    #filtered_data <- comp_eda_sf %>%
-    #  filter(year %in% ifelse(input$comp_year == 0, unique(year), input$comp_year)) %>%
-    #  filter(state %in% input$state_select) %>%
-    #  filter(type %in% if (is.null(input$comp_type_select)) {types} else {input$comp_type_select})
+    filtered_data <- comp_eda_sf %>%
+      filter(year %in% ifelse(input$comp_year == 0, unique(year), input$comp_year)) %>%
+      filter(state %in% input$state_select) %>%
+      filter(type %in% if (is.null(input$comp_type_select)) {types} else {input$comp_type_select})
     
-    filtered_data <- filter_crime_data(
-      data = comp_eda_sf,
-      selected_year = input$comp_year,
-      selected_states = input$state_select,
-      selected_types = input$comp_type_select
-    )
     # Use geom_sf() for spatial plotting
     p <- ggplot(filtered_data) +
       geom_sf(aes(fill = !!sym(input$comp_measure))) +  # Use !!sym() to properly reference the column
