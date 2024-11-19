@@ -13,10 +13,12 @@ category <- unique(eda_sf$category)
 
 eda_ui <- tabPanel("Exploratory Data Analysis",
                    h1("Visualising Distributions of Crime"), 
+                   helpText("This dashboard allows you to explore crime patterns across different states, years, and crime types through three different analytical views."),
                    navset_card_pill( 
                      # First Panel - Choropleth Analysis
                      nav_panel(
                        "Choropleth Analysis",
+                       helpText("View crime distribution across states using color-coded maps. Darker colors indicate higher crime rates."),
                        sidebarLayout(
                          sidebarPanel(
                            selectInput(
@@ -67,6 +69,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                      # Second Panel - 
                      nav_panel(
                        "Crime Trends Analysis Dashboard",
+                       helpText("Analyze how crime patterns change over time with interactive trend lines."),
                        sidebarLayout(
                          sidebarPanel(
                            selectInput(
@@ -114,6 +117,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                      ),
                      nav_panel(
                        "State Comparison",
+                       helpText("Compare crime statistics of one state against others using relative measures."),
                        sidebarLayout(
                          sidebarPanel(
                            selectInput(
@@ -137,7 +141,7 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                              )
                            ),
                            selectInput(
-                             "state_select",
+                             "comp_state_select",
                              "State",
                              choices = states,
                              selected = "JOHOR"
@@ -232,47 +236,6 @@ eda_server <- function(input, output) {
     
   })
   
-  output$trend_plot1 <- renderPlotly({
-    base_data <- eda_sf %>%
-      st_drop_geometry() %>%
-      dplyr::select(state, year, category, type, crimes, crimes_pc)
-    
-    if (is.null(input$trend_state_select)) {
-      filtered_data <- base_data %>%
-        filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
-        filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
-        filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
-    } else {
-      filtered_data <- base_data %>%
-        filter(year %in% ifelse(input$trend_sel_year == 0, unique(year), input$trend_sel_year)) %>%
-        filter(state %in% input$trend_state_select) %>%
-        filter(category %in% ifelse(input$trend_category_select == "All", unique(category), input$trend_category_select)) %>%
-        filter(type %in% if (is.null(input$trend_type_select)) {types} else {input$trend_type_select})
-    }
-    
-    p <- ggplot(filtered_data, 
-                aes(x = year, 
-                    y = !!sym(input$trend_metric), 
-                    color = state, 
-                    group = state)) +
-      geom_line(size = 1) +
-      geom_point(size = 3) +
-      theme_minimal() +
-      labs(title = paste("Crime Trends:", 
-                         ifelse(input$trend_category_select == "All", 
-                                "All Categories", 
-                                input$trend_category_select)),
-           x = "Year",
-           y = ifelse(input$trend_metric == "crimes", 
-                      "Total Crimes", 
-                      "Crimes per Capita"),
-           color = "State") +
-      theme(legend.position = "bottom")
-    
-    ggplotly(p) %>%
-      layout(hovermode = "x unified")
-  })
-  
   output$trend_plot <- renderPlotly({
     base_data <- eda_sf %>%
       st_drop_geometry() %>%
@@ -356,14 +319,12 @@ eda_server <- function(input, output) {
       config(displayModeBar = FALSE)  # Remove the plotly toolbar
   })
   
-  comp_result <- eventReactive(input$comp_btn, {
-    # Keep geometry column by not using st_drop_geometry earlier
+  comp_result1 <- eventReactive(input$comp_btn, {
     filtered_data <- comp_eda_sf %>%
       filter(year %in% ifelse(input$comp_year == 0, unique(year), input$comp_year)) %>%
       filter(state %in% input$state_select) %>%
       filter(type %in% if (is.null(input$comp_type_select)) {types} else {input$comp_type_select})
     
-    # Use geom_sf() for spatial plotting
     p <- ggplot(filtered_data) +
       geom_sf(aes(fill = !!sym(input$comp_measure))) +  # Use !!sym() to properly reference the column
       scale_fill_distiller(palette = "Blues", direction = 1) +
@@ -383,14 +344,139 @@ eda_server <- function(input, output) {
     ))       
   })
   
-  output$state_comparison <- renderPlotly({
+  output$state_comparison1 <- renderPlotly({
     result <- comp_result()
     p <- result$p
     comp_measure <- result$comp_measure
     
-    # Convert to plotly while preserving spatial information
     ggplotly(p, tooltip = c("state", comp_measure)) %>%
       style(hoveron = "fills")  # Ensure hover works on filled regions
   })
   
+  comp_result <- eventReactive(input$comp_btn, {
+    selected_types <- if (is.null(input$comp_type_select)) {
+      types # Use all types if none selected
+    } else {
+      input$comp_type_select
+    }
+    
+    filtered_data <- if (input$comp_year != 0) {
+      piv_eda_sf %>% filter(year == input$comp_year)
+    } else {
+      piv_eda_sf
+    }
+    
+    filtered_data <- filtered_data %>%
+    filter(state %in% input$comp_state_select)
+    
+    if (input$comp_measure == "crime_ratio_to_sum") {
+      processed_data <- filtered_data %>%
+        mutate(national_total = rowSums(across(all_of(selected_types)), na.rm = TRUE)) %>%
+        group_by(year) %>%
+        mutate(national_total = sum(national_total, na.rm = TRUE)) %>%
+        ungroup() %>%
+        group_by(state, district, year) %>%
+        mutate(
+          district_sum = rowSums(across(all_of(selected_types)), na.rm = TRUE),
+          crime_ratio = district_sum / national_total
+        ) %>%
+        ungroup()
+    } else {
+      processed_data <- filtered_data %>%
+        mutate(national_mean = rowSums(across(all_of(selected_types) / length(selected_types)), na.rm = TRUE)) %>%
+        group_by(year) %>%
+        mutate(national_total = sum(national_total, na.rm = TRUE)) %>%
+        ungroup() %>%
+        group_by(state, district, year) %>%
+        mutate(
+          district_mean = rowSums(across(all_of(selected_types) / length(selected_types)), na.rm = TRUE),
+          crime_ratio = district_mean / national_mean
+        ) %>%
+        ungroup()
+    }
+    
+    plot_data <- processed_data %>%
+      dplyr::select(state, district, year, geometry, crime_ratio)
+    
+    p <- ggplot() +
+      geom_sf(data = plot_data, 
+              aes(geometry = geometry,
+                  fill = crime_ratio)) +
+      scale_fill_distiller(palette = "Blues", direction = 1) +
+      labs(title = paste("Crime Distribution -", 
+                         paste(selected_types, collapse = ", ")),
+           fill = ifelse(input$comp_measure == "crime_ratio_to_sum", 
+                         "Ratio to State Sum", 
+                         "Ratio to State Mean")) +
+      theme_minimal() +
+      theme(axis.title = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.title = element_text(hjust = 0.5))
+    
+    return(list(
+      p = p,
+      data = plot_data,
+      comp_measure = input$comp_measure
+    ))
+  })
+  
+  output$state_comparison <- renderPlotly({
+    result <- comp_result()
+    
+    p <- result$p +
+      aes(text = paste("District:", district,
+                       "<br>Crime Ratio:", round(crime_ratio, 6)))
+    
+    plot <- ggplotly(p, tooltip = "text") %>%
+      layout(
+        hoverlabel = list(
+          bgcolor = "white",
+          font = list(size = 12)
+        )
+      )
+    
+    if (result$comp_measure == "crime_ratio_to_sum") {
+      plot <- plot %>%
+        layout(
+          title = list(
+            text = "Crime Distribution (Ratio to State Sum)",
+            x = 0.5
+          )
+        )
+    } else {
+      plot <- plot %>%
+        layout(
+          title = list(
+            text = "Crime Distribution (Ratio to State Mean)",
+            x = 0.5
+          )
+        )
+    }
+    
+    plot %>%
+      layout(
+        margin = list(l = 50, r = 50, t = 50, b = 50),
+        font = list(family = "Arial"),
+        showlegend = TRUE,
+        legend = list(
+          title = list(
+            text = if(result$comp_measure == "crime_ratio_to_sum") 
+              "Ratio to State Sum" 
+            else 
+              "Ratio to State Mean"
+          ),
+          x = 1,
+          y = 0.5
+        )
+      ) %>%
+      config(
+        displayModeBar = TRUE,
+        modeBarButtonsToRemove = list(
+          "zoomIn2d", "zoomOut2d", "autoScale2d",
+          "hoverClosestCartesian", "hoverCompareCartesian"
+        ),
+        displaylogo = FALSE
+      )
+  })
 }
