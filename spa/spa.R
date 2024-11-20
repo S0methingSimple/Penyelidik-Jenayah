@@ -11,6 +11,8 @@ spa_ui <- tabPanel("Spatial Autocorrelation",
     nav_panel("Global Measures",
      sidebarLayout(
        sidebarPanel(
+         helpText("ℹ️ This section allows you to perform a global Moran's I/Geary's C test to assess spatial autocorrelation. The histogram visualizes the distribution of Moran's I values under the null hypothesis."),
+         hr(),
          h4("Choose Permutation Test"),
          radioButtons(inputId = "HistogramTest",
                       label = "Permutation Test Method:",
@@ -49,6 +51,8 @@ spa_ui <- tabPanel("Spatial Autocorrelation",
    nav_panel("Local Measures",
              sidebarLayout(
                sidebarPanel(
+                 helpText("ℹ️ This section helps you identify and analyze local clusters of similar values in your spatial data using Local Moran's I/LISA classification and visualize the results on a map."),
+                 hr(),
                  h4("Customize Indicator"),
                  radioButtons(inputId = "LISAIndicator",
                               label = "Select LISA Indicator:",
@@ -103,19 +107,19 @@ spa_ui <- tabPanel("Spatial Autocorrelation",
                                             "Yellow-Orange-Brown" = "YlOrBr",
                                             "Yellow-Green" = "YlGn",
                                             "Orange-Red" = "OrRd"),
-                             selected = "-RdBu"),
+                             selected = "YlOrRd"),
                  actionButton("MoranUpdate", "Update Plot")
                ),
                mainPanel(
-                 tmapOutput("LocalMoranMap",
-                            width = "95%",
-                            height = 580)
+                 tmapOutput("LocalMoranMap")
                )
              )
    ),
    nav_panel("Hot Cold Spot Analysis",
              sidebarLayout(
                sidebarPanel(
+                 helpText("ℹ️️ This section allows you to perform a Getis-Ord Gi* statistical test to identify clusters of high and low values in your spatial data. The map highlights the statistically significant hot and cold spots."),
+                 hr(),
                  h4("Choose Hot/Cold Spots"),
                  checkboxInput("hotspots", "View Hotspots", value = TRUE),
                  checkboxInput("coldspots", "View Coldspots", value = TRUE),
@@ -139,9 +143,7 @@ spa_ui <- tabPanel("Spatial Autocorrelation",
                  actionButton("GiStarUpdate", "Update Plot")
                ),
                mainPanel(
-                 tmapOutput("GiStarmap",
-                            width = "95%",
-                            height = 580)
+                 tmapOutput("GiStarmap")
                )
              )
    )

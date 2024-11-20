@@ -3,8 +3,7 @@ pacman::p_load(shiny, sf, tmap, tidyverse, sfdep, shinydashboard, shinythemes,
                spatstat, sfdep, ClustGeo, ggpubr, cluster, factoextra, 
                NbClust, heatmaply, corrplot, psych, tidyverse, GGally)
 
-eda_sf <- read_rds("data/eda/eda.rds")
-comp_eda_sf <- read_rds("data/eda/comp_eda.rds")
+eda_sf <- read_rds("data/eda/eda_sf.rds")
 piv_eda_sf <- read_rds("data/eda/piv_eda.rds")
 piv_pc_eda_sf <- read_rds("data/eda/piv_pc_eda.rds")
 states <- unique(piv_eda_sf$state)
@@ -319,40 +318,6 @@ eda_server <- function(input, output) {
       config(displayModeBar = FALSE)  # Remove the plotly toolbar
   })
   
-  comp_result1 <- eventReactive(input$comp_btn, {
-    filtered_data <- comp_eda_sf %>%
-      filter(year %in% ifelse(input$comp_year == 0, unique(year), input$comp_year)) %>%
-      filter(state %in% input$state_select) %>%
-      filter(type %in% if (is.null(input$comp_type_select)) {types} else {input$comp_type_select})
-    
-    p <- ggplot(filtered_data) +
-      geom_sf(aes(fill = !!sym(input$comp_measure))) +  # Use !!sym() to properly reference the column
-      scale_fill_distiller(palette = "Blues", direction = 1) +
-      labs(title = "Crime Distribution",
-           fill = ifelse(input$comp_measure == "crime_ratio_to_sum", 
-                         "Ratio to State Sum", 
-                         "Ratio to State Mean")) +
-      theme_minimal() +
-      theme(axis.title = element_blank(),
-            axis.text = element_blank(),
-            axis.ticks = element_blank(),
-            plot.title = element_text(hjust = 0.5))
-    
-    return(list(
-      p = p,
-      comp_measure = input$comp_measure
-    ))       
-  })
-  
-  output$state_comparison1 <- renderPlotly({
-    result <- comp_result()
-    p <- result$p
-    comp_measure <- result$comp_measure
-    
-    ggplotly(p, tooltip = c("state", comp_measure)) %>%
-      style(hoveron = "fills")  # Ensure hover works on filled regions
-  })
-  
   comp_result <- eventReactive(input$comp_btn, {
     selected_types <- if (is.null(input$comp_type_select)) {
       types # Use all types if none selected
@@ -371,9 +336,9 @@ eda_server <- function(input, output) {
     
     if (input$comp_measure == "crime_ratio_to_sum") {
       processed_data <- filtered_data %>%
-        mutate(national_total = rowSums(across(all_of(selected_types)), na.rm = TRUE)) %>%
-        group_by(year) %>%
-        mutate(national_total = sum(national_total, na.rm = TRUE)) %>%
+        mutate(types_total = rowSums(across(all_of(selected_types)), na.rm = TRUE)) %>%
+        group_by(state, year) %>%
+        mutate(national_total = sum(types_total, na.rm = TRUE)) %>%
         ungroup() %>%
         group_by(state, district, year) %>%
         mutate(
@@ -383,14 +348,14 @@ eda_server <- function(input, output) {
         ungroup()
     } else {
       processed_data <- filtered_data %>%
-        mutate(national_mean = rowSums(across(all_of(selected_types) / length(selected_types)), na.rm = TRUE)) %>%
-        group_by(year) %>%
-        mutate(national_total = sum(national_total, na.rm = TRUE)) %>%
+        mutate(types_total = rowSums(across(all_of(selected_types)), na.rm = TRUE)) %>%
+        group_by(state, year) %>%
+        mutate(national_mean = mean(types_total, na.rm = TRUE)) %>%
         ungroup() %>%
         group_by(state, district, year) %>%
         mutate(
-          district_mean = rowSums(across(all_of(selected_types) / length(selected_types)), na.rm = TRUE),
-          crime_ratio = district_mean / national_mean
+          district_sum = rowSums(across(all_of(selected_types)), na.rm = TRUE),
+          crime_ratio = district_sum / national_mean
         ) %>%
         ungroup()
     }
