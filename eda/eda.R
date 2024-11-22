@@ -17,9 +17,10 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                      # First Panel - Choropleth Analysis
                      nav_panel(
                        "Choropleth Analysis",
-                       helpText("View crime distribution across states using color-coded maps. Darker colors indicate higher crime rates."),
                        sidebarLayout(
                          sidebarPanel(
+                           helpText("ℹ️ View crime distribution across states using color-coded maps. Darker colors indicate higher crime rates."),
+                           hr(),
                            selectInput(
                              "eda_sel_year",
                              "Year",
@@ -68,9 +69,10 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                      # Second Panel - 
                      nav_panel(
                        "Crime Trends Analysis Dashboard",
-                       helpText("Analyze how crime patterns change over time with interactive trend lines."),
                        sidebarLayout(
                          sidebarPanel(
+                           helpText("ℹ️ Analyze how crime patterns change over time with interactive trend lines."),
+                           hr(),
                            selectInput(
                              "trend_sel_year",
                              "Year",
@@ -116,9 +118,10 @@ eda_ui <- tabPanel("Exploratory Data Analysis",
                      ),
                      nav_panel(
                        "State Comparison",
-                       helpText("Compare crime statistics of one state against others using relative measures."),
                        sidebarLayout(
                          sidebarPanel(
+                           helpText("ℹ️ Compare crime statistics of one state against others using relative measures."),
+                           hr(),
                            selectInput(
                              "comp_year",
                              "Year",
