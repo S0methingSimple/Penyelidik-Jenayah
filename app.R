@@ -19,6 +19,10 @@ ui <- navbarPage(
   id = "navbarID",
   tabPanel("Overview",
      h1("Crime Hotspots: A Malaysian Perspective"),
+     div("AY24/25-T1 G1T6: Hei Yee Kai, Jeffery Lau Wei Yang, Cheo Hai Xuan Jenna"),
+     hr(),
+     div(a("Netlify Homepage", href="https://is415-g1t6.netlify.app/")),
+     hr(),
      img(src = "banner.png", style="width:100%;"),
      h3("Introduction"),
      div("This research delves into the spatial dynamics of crime in Malaysia, utilizing advanced spatial analysis techniques to uncover patterns and trends. By analyzing a comprehensive dataset of crime incidents, we aim to identify hotspots, coldspots, and spatial clusters of criminal activity. Through this exploration, we seek to provide valuable insights into the factors influencing crime and to inform evidence-based crime prevention strategies. Previous studies have demonstrated the efficacy of spatial analysis in understanding crime patterns. Research has shown that property crimes tend to cluster in urban areas, while violent crimes may exhibit different spatial patterns. Spatial autocorrelation and clustering techniques have been employed to identify spatial relationships between crime and socio-economic factors, providing valuable insights for targeted interventions. Additionally, exploratory spatial data analysis (ESDA) has been used to uncover spatial autocorrelation and clustering in crime data."),
@@ -28,11 +32,12 @@ ui <- navbarPage(
      tags$ul("Exploratory Data Analysis (EDA): Visualize the spatial and temporal trends of crime in Malaysia."),
      tags$ul("Spatial Autocorrelation (SPA): Explore the spatial dependency of crime incidents across different regions."),
      tags$ul("Spatial Clustering (SPC): Identify clusters of similar crime patterns and understand their spatial distribution."),
-     #img(src = "smu-logo.jpeg"),
+     hr(),
+     img(src = "smu-logo.jpeg"),
   ),
   eda_ui,
   spa_ui,
-  spc_ui
+  spc_ui,
 )
 
 #========================#

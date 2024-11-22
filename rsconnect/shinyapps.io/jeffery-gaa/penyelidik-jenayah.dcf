@@ -5,6 +5,6 @@ account: jeffery-gaa
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13219515
-bundleId: 9376082
+bundleId:
 url: https://jeffery-gaa.shinyapps.io/penyelidik-jenayah/
 version: 1

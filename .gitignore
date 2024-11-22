@@ -4,5 +4,7 @@
 .Ruserdata
 .DS_Store
 
+renv/
+renv.lock
 secret
 /data

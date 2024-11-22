@@ -30,7 +30,7 @@ proc_df <- function(yr, states, norm, sf) {
                   } else {
                     .
                   })) 
-    
+  
   if (!sf) {
     rns <- spc_sf.fil$district
     spc_sf.fil <- spc_sf.fil %>%
@@ -139,7 +139,7 @@ cc_func <- function(input, output) {
                                     file = NULL, 
                                     type = "output")[11:24], 
                                     collapse = "<br>")
-                                  )
+      )
       res$sel_style = sel_style
     }
     
@@ -254,7 +254,7 @@ get_clust <- function(input, output, type) {
       clust.sf$sk <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
     }
   }
-    
+  
   if (!comp) {
     clust.sf <- cbind(clust_sf, groups) %>% rename(`CLUSTER`=`groups`)
   }
@@ -384,4 +384,3 @@ map_nb <- function(nb) {
   nb[[70]] <- c(nb[[70]], as.integer(71))
   nb
 }
-
