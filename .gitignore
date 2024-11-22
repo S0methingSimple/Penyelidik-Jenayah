@@ -3,9 +3,5 @@
 .RData
 .Ruserdata
 .DS_Store
-.Rprofile
-
-renv/
-renv.lock
 secret
 /data
